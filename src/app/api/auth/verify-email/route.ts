@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { users, verificationTokens } from '@/lib/db/schema'
 import { and, eq, gt } from 'drizzle-orm'
+import { sendEmail } from '@/lib/email'
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,6 +32,18 @@ export async function GET(request: NextRequest) {
 
     await db.delete(verificationTokens)
       .where(and(eq(verificationTokens.identifier, `verify:${id}`), eq(verificationTokens.token, token)))
+
+    // Send welcome email after verification
+    const user = await db.query.users.findFirst({ where: eq(users.id, id) })
+    if (user) {
+      sendEmail({
+        to: user.email,
+        type: 'welcome',
+        name: user.name || 'User',
+        purpose: 'welcome',
+        logUserId: user.id,
+      }).catch(console.error)
+    }
 
     return NextResponse.redirect(new URL('/login?verified=true', request.url))
   } catch (error) {

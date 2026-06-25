@@ -17,14 +17,9 @@ export async function POST(request: NextRequest) {
 
     const result = await sendEmail({
       to,
-      subject: 'PostPencil SMTP Test',
-      html: `
-        <h2>SMTP Test Email</h2>
-        <p>This is a test email from PostPencil. If you received this, your SMTP configuration is working correctly.</p>
-        <p>Sent at: ${new Date().toISOString()}</p>
-      `,
+      type: 'test',
       purpose: 'smtp_test',
-      userId: session.user.id,
+      logUserId: session.user.id,
     });
 
     if (result) {

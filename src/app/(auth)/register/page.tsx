@@ -73,7 +73,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, username, email, password }) })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Registration failed'); return }
-      setRegisteredEmail(email); setResendCooldown(30); setRegistered(true)
+      window.location.href = `/pending-verification?email=${encodeURIComponent(email)}`
     } catch { setError('Something went wrong. Please try again.') } finally { setLoading(false) }
   }
 

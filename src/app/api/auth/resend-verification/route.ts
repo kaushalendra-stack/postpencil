@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { users, verificationTokens } from '@/lib/db/schema';
 import { eq, and, gt } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { sendEmail, verificationEmailHtml } from '@/lib/email';
+import { sendEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
     const token = randomUUID();
 
     await db.insert(verificationTokens).values({
+      id: randomUUID(),
       identifier: `verify:${user.id}`,
       token,
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -38,10 +39,12 @@ export async function POST(request: NextRequest) {
 
     sendEmail({
       to: email,
-      subject: 'Verify your email - PostPencil',
-      html: verificationEmailHtml(user.name || 'User', token, user.id),
-      purpose: 'verification',
+      type: 'verification',
+      name: user.name || 'User',
+      token,
       userId: user.id,
+      purpose: 'verification',
+      logUserId: user.id,
     }).catch(console.error);
 
     return NextResponse.json({ message: 'Verification email sent' }, { status: 200 });

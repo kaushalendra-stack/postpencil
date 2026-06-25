@@ -7,7 +7,7 @@ import { eq, or, and } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { users, accounts, sessions, verificationTokens } from '@/lib/db/schema';
-import { sendEmail, welcomeEmailHtml } from '@/lib/email';
+import { sendEmail } from '@/lib/email';
 import { randomUUID } from 'crypto';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -131,10 +131,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (newUser) {
           sendEmail({
             to: user.email,
-            subject: 'Welcome to PostPencil!',
-            html: welcomeEmailHtml(name as string),
+            type: 'welcome',
+            name: name as string,
             purpose: 'welcome',
-            userId: user.id as string,
+            logUserId: user.id as string,
           }).catch(console.error);
         }
       }

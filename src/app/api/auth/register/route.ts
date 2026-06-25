@@ -4,7 +4,7 @@ import { users, verificationTokens } from '@/lib/db/schema';
 import { eq, or } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
-import { sendEmail, verificationEmailHtml } from '@/lib/email';
+import { sendEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,18 +65,21 @@ export async function POST(request: NextRequest) {
     const token = randomUUID();
 
     await db.insert(verificationTokens).values({
+      id: randomUUID(),
       identifier: `verify:${userId}`,
       token,
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    sendEmail({
+    await sendEmail({
       to: email,
-      subject: 'Verify your email - PostPencil',
-      html: verificationEmailHtml(name, token, userId),
-      purpose: 'verification',
+      type: 'verification',
+      name,
+      token,
       userId,
-    }).catch(console.error);
+      purpose: 'verification',
+      logUserId: userId,
+    });
 
     return NextResponse.json({ message: 'Account created. Please check your email to verify.' }, { status: 201 });
   } catch (error) {
