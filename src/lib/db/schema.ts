@@ -59,17 +59,15 @@ export const accounts = mysqlTable('accounts', {
 ]);
 
 export const sessions = mysqlTable('sessions', {
-  id: varchar('id', { length: 36 }).primaryKey(),
-  sessionToken: varchar('session_token', { length: 255 }).notNull().unique(),
+  sessionToken: varchar('session_token', { length: 255 }).primaryKey(),
   userId: varchar('user_id', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
   expires: timestamp('expires').notNull(),
 });
 
 export const verificationTokens = mysqlTable('verification_tokens', {
-  id: varchar('id', { length: 36 }).primaryKey(),
-  identifier: varchar('identifier', { length: 255 }),
-  token: varchar('token', { length: 255 }),
-  expires: timestamp('expires'),
+  identifier: varchar('identifier', { length: 255 }).notNull(),
+  token: varchar('token', { length: 255 }).notNull(),
+  expires: timestamp('expires').notNull(),
 }, (table) => [
   uniqueIndex('verification_tokens_identifier_token_idx').on(table.identifier, table.token),
 ]);
@@ -220,25 +218,6 @@ export const emailLogs = mysqlTable('email_logs', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-export const loginSessions = mysqlTable('login_sessions', {
-  id: varchar('id', { length: 36 }).primaryKey(),
-  userId: varchar('user_id', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  sessionToken: varchar('session_token', { length: 255 }),
-  provider: varchar('provider', { length: 50 }),
-  ip: varchar('ip', { length: 45 }),
-  userAgent: varchar('user_agent', { length: 500 }),
-  device: varchar('device', { length: 255 }),
-  browser: varchar('browser', { length: 255 }),
-  os: varchar('os', { length: 255 }),
-  location: varchar('location', { length: 255 }),
-  fromSource: varchar('from_source', { length: 50 }).default('web'),
-  isCurrent: boolean('is_current').default(false),
-  lastActiveAt: timestamp('last_active_at'),
-  createdAt: timestamp('created_at').defaultNow(),
-  expiresAt: timestamp('expires_at'),
-  expiredAt: timestamp('expired_at'),
-});
-
 export const tickets = mysqlTable('tickets', {
   id: varchar('id', { length: 36 }).primaryKey(),
   userId: varchar('user_id', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -287,7 +266,6 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   reports: many(reports),
   recentSearches: many(recentSearches),
   emailLogs: many(emailLogs),
-  loginSessions: many(loginSessions),
   tickets: many(tickets),
   settings: one(userSettings),
 }));
@@ -409,13 +387,6 @@ export const ticketsRelations = relations(tickets, ({ one }) => ({
 export const emailLogsRelations = relations(emailLogs, ({ one }) => ({
   user: one(users, {
     fields: [emailLogs.userId],
-    references: [users.id],
-  }),
-}));
-
-export const loginSessionsRelations = relations(loginSessions, ({ one }) => ({
-  user: one(users, {
-    fields: [loginSessions.userId],
     references: [users.id],
   }),
 }));

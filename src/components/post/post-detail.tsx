@@ -119,7 +119,7 @@ export function PostDetail() {
               {post.semester && (
                 <Badge variant="secondary">{post.semester}</Badge>
               )}
-              {post.tags.map((tag) => (
+              {post.tags.map((tag: any) => (
                 <Badge key={tag.id} variant="outline">
                   #{tag.name}
                 </Badge>
@@ -136,7 +136,7 @@ export function PostDetail() {
           {post.files.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Files</h3>
-              {post.files.map((file) => (
+              {post.files.map((file: any) => (
                 <div
                   key={file.id}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/50"

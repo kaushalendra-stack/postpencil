@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       .where(eq(users.id, userId))
 
     await db.delete(verificationTokens)
-      .where(eq(verificationTokens.id, verificationToken.id))
+      .where(and(eq(verificationTokens.identifier, `reset:${userId}`), eq(verificationTokens.token, token)))
 
     return NextResponse.json({ message: 'Password updated successfully' }, { status: 200 })
   } catch (error) {

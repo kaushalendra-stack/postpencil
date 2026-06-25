@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import { useParams } from 'next/navigation'
-import { Heart, GraduationCap, BookOpen, ExternalLink, Settings } from 'lucide-react'
+import { Heart, Camera, GraduationCap, BookOpen, ExternalLink, Settings } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -19,9 +21,40 @@ export function UserProfile() {
   const { data: session } = useSession()
   const { data: user, isLoading: isLoadingUser } = useUser(username)
   const { data: posts, isLoading: isLoadingPosts } = useUserPosts(username)
+  const qc = useQueryClient()
   const followMutation = useFollowUser()
   const [isFollowing, setIsFollowing] = useState(false)
   const [activeTab, setActiveTab] = useState<'resources' | 'likes'>('resources')
+  const bannerRef = useRef<HTMLInputElement>(null)
+  const avatarRef = useRef<HTMLInputElement>(null)
+  const [bannerPreview, setBannerPreview] = useState(user?.banner || '')
+  const [avatarPreview, setAvatarPreview] = useState(user?.image || '')
+
+  const uploadMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await fetch(`/api/users/${username}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+      if (!res.ok) throw new Error('Failed')
+      return res.json()
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['users', username] }); toast.success('Profile updated') },
+    onError: () => toast.error('Failed to update'),
+  })
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const url = URL.createObjectURL(file)
+    setBannerPreview(url)
+    uploadMutation.mutate({ banner: url })
+  }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const url = URL.createObjectURL(file)
+    setAvatarPreview(url)
+    uploadMutation.mutate({ image: url })
+  }
 
   const isOwnProfile = session?.user?.id === user?.id
 
@@ -81,27 +114,30 @@ export function UserProfile() {
   return (
     <div className="min-h-screen">
       {/* Banner */}
-      <div className="h-36 sm:h-44 bg-gradient-to-br from-muted to-muted/60 relative">
-        {user.banner && (
-          <img
-            src={user.banner}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+      <div className="h-36 sm:h-44 bg-gradient-to-br from-muted to-muted/60 relative group cursor-pointer" onClick={() => isOwnProfile && bannerRef.current?.click()}>
+        {user.banner && <img src={user.banner} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+        {isOwnProfile && (
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 rounded-full px-3 py-1.5 text-xs font-medium flex items-center gap-1.5"><Camera className="h-3.5 w-3.5" />Change banner</div>
+          </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
+        <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={handleBannerChange} />
       </div>
 
       {/* Profile Info */}
       <div className="max-w-2xl mx-auto px-4">
-        {/* Avatar + Actions */}
         <div className="flex items-end justify-between -mt-14 mb-4">
-          <Avatar className="h-28 w-28 border-4 border-background shadow-lg">
-            <AvatarImage src={user.image || undefined} alt={user.name || ''} />
-            <AvatarFallback className="text-3xl font-semibold">
-              {user.name?.charAt(0)?.toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className="h-28 w-28 border-4 border-background shadow-lg">
+              <AvatarImage src={avatarPreview || undefined} alt={user.name || ''} />
+              <AvatarFallback className="text-3xl font-semibold">{user.name?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
+            </Avatar>
+            {isOwnProfile && (
+              <button onClick={() => avatarRef.current?.click()} className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-background border border-border flex items-center justify-center hover:bg-accent transition-colors shadow-sm"><Camera className="h-4 w-4" /></button>
+            )}
+            <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+          </div>
 
           <div className="flex items-center gap-2 mt-16">
             {isOwnProfile ? (

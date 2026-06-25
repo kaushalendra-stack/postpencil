@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
     const token = randomUUID();
 
     await db.insert(verificationTokens).values({
-      id: randomUUID(),
       identifier: `verify:${user.id}`,
       token,
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),

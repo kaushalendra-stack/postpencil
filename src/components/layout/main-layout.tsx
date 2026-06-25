@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { Sidebar } from './sidebar'
 import { TopBar } from './topbar'
 import { MobileNav } from './mobile-nav'
@@ -17,18 +17,12 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, title, showBack = false }: MainLayoutProps) {
   const { data: session, status } = useSession()
-  const router = useRouter()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const isPublic = PUBLIC_ROUTES.some((route) => pathname.startsWith(route))
 
-  useEffect(() => {
-    if (status === 'unauthenticated' && !isPublic) {
-      router.push('/login')
-    }
-  }, [status, isPublic, router])
-
+  // Close mobile nav on route change
   useEffect(() => {
     setMobileOpen(false)
   }, [pathname])

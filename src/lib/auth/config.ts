@@ -3,10 +3,10 @@ import Google from 'next-auth/providers/google';
 import GitHub from 'next-auth/providers/github';
 import Credentials from 'next-auth/providers/credentials';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { eq, or, and, sql } from 'drizzle-orm';
+import { eq, or, and } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
-import { users, accounts, sessions, verificationTokens, loginSessions } from '@/lib/db/schema';
+import { users, accounts, sessions, verificationTokens } from '@/lib/db/schema';
 import { sendEmail, welcomeEmailHtml } from '@/lib/email';
 import { randomUUID } from 'crypto';
 
@@ -49,42 +49,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const isValid = await bcrypt.compare(credentials.password as string, user.password);
         if (!isValid) return null;
 
-        const sessionToken = randomUUID();
-        await db.insert(loginSessions).values({
-          id: randomUUID(),
-          userId: user.id,
-          sessionToken,
-          provider: 'credentials',
-          isCurrent: true,
-          lastActiveAt: new Date(),
-        });
-
-        return { id: user.id, name: user.name, email: user.email, image: user.image, sessionToken };
+        return { id: user.id, name: user.name, email: user.email, image: user.image };
       },
     }),
   ],
   callbacks: {
-    async signIn({ user, account, request }) {
+    async signIn({ user, account }) {
       if (!account) return false;
-
-      // Extract request info
-      const ip = request?.headers?.get('x-forwarded-for')?.split(',')[0] || request?.headers?.get('x-real-ip') || 'unknown';
-      const userAgent = request?.headers?.get('user-agent') || '';
-      const ua = userAgent.toLowerCase();
-      const browser = ua.includes('edg') ? 'Edge' : ua.includes('chrome') ? 'Chrome' : ua.includes('firefox') ? 'Firefox' : ua.includes('safari') ? 'Safari' : 'Unknown';
-      const os = ua.includes('windows') ? 'Windows' : ua.includes('mac os') ? 'macOS' : ua.includes('linux') ? 'Linux' : ua.includes('android') ? 'Android' : ua.includes('iphone') || ua.includes('ipad') ? 'iOS' : 'Unknown';
-      const device = ua.includes('mobile') || ua.includes('android') ? 'Mobile' : ua.includes('ipad') || ua.includes('tablet') ? 'Tablet' : 'Desktop';
-
       if (account.provider === 'credentials') {
-        // Update the session we just created in authorize with request info
-        const [lastSession] = await db.select().from(loginSessions)
-          .where(eq(loginSessions.userId, user.id as string))
-          .orderBy(sql`${loginSessions.createdAt} DESC`)
-          .limit(1);
-        if (lastSession) {
-          await db.update(loginSessions).set({ ip, userAgent, browser, os, device, fromSource: 'web' })
-            .where(eq(loginSessions.id, lastSession.id));
-        }
         return true;
       }
       if (!user?.email) return false;
@@ -131,23 +103,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           })
           .where(eq(users.id, existingUser.id));
 
-        // Log session
-        const oauthSessionToken = randomUUID();
-        await db.insert(loginSessions).values({
-          id: randomUUID(),
-          userId: existingUser.id,
-          sessionToken: oauthSessionToken,
-          provider: account.provider,
-          ip,
-          userAgent,
-          browser,
-          os,
-          device,
-          fromSource: 'web',
-          isCurrent: true,
-          lastActiveAt: new Date(),
-        });
-        (user as any).sessionToken = oauthSessionToken;
       } else {
         // Create new user
         const name = user.name || user.email.split('@')[0];
@@ -171,32 +126,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           provider: account.provider,
           providerAccountId: account.providerAccountId,
           emailVerified: new Date(),
-        }).returning();
+        }).$returningId();
 
         if (newUser) {
-          const newUserSessionToken = randomUUID();
-          await db.insert(loginSessions).values({
-            id: randomUUID(),
-            userId: newUser.id,
-            sessionToken: newUserSessionToken,
-            provider: account.provider,
-            ip,
-            userAgent,
-            browser,
-            os,
-            device,
-            fromSource: 'web',
-            isCurrent: true,
-            lastActiveAt: new Date(),
-          });
-          (user as any).sessionToken = newUserSessionToken;
-
           sendEmail({
             to: user.email,
             subject: 'Welcome to PostPencil!',
             html: welcomeEmailHtml(name as string),
             purpose: 'welcome',
-            userId: newUser.id,
+            userId: user.id as string,
           }).catch(console.error);
         }
       }
@@ -207,19 +145,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user, account }) {
       if (user) token.id = user.id;
       if (account) token.provider = account.provider;
-      if ((user as any)?.sessionToken) token.sessionToken = (user as any).sessionToken;
       return token;
     },
 
     async session({ session, token }) {
       if (session.user && token.id) {
         session.user.id = token.id as string;
-        (session.user as any).sessionToken = token.sessionToken as string;
         const [dbUser] = await db.select().from(users).where(eq(users.id, token.id as string)).limit(1);
         if (dbUser) {
-          session.user.name = dbUser.name;
-          session.user.email = dbUser.email;
-          session.user.image = dbUser.image;
+          session.user.name = dbUser.name ?? session.user.name;
+          session.user.email = dbUser.email ?? session.user.email;
+          session.user.image = dbUser.image ?? session.user.image;
           (session.user as any).username = dbUser.username;
           (session.user as any).role = dbUser.role;
           (session.user as any).provider = dbUser.provider;

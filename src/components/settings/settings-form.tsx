@@ -8,7 +8,7 @@ import { useTheme } from 'next-themes'
 import toast from 'react-hot-toast'
 import {
   User, Shield, Bell, Palette, Link2, FileText, Camera,
-  Sun, Moon, ChevronRight, Eye, EyeOff, ExternalLink, Smartphone, Laptop,
+  Sun, Moon, ChevronRight, Eye, EyeOff, ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -174,33 +174,6 @@ function AccountSettings() {
   const [showCurrentPw, setShowCurrentPw] = useState(false)
   const [showNewPw, setShowNewPw] = useState(false)
 
-  const { data: sessionsRaw, refetch: refetchSessions } = useQuery({
-    queryKey: ['login-sessions'],
-    queryFn: async () => {
-      const res = await fetch('/api/sessions')
-      if (!res.ok) return []
-      return res.json()
-    },
-  })
-
-  const sessionList: any[] = Array.isArray(sessionsRaw) ? sessionsRaw : Array.isArray(sessionsRaw?.data) ? sessionsRaw.data : []
-
-  const revokeMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
-      const res = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'revoke', sessionId }) });
-      return res.json();
-    },
-    onSuccess: () => { refetchSessions(); toast.success('Session revoked'); },
-  })
-
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'revoke_all' }) });
-    },
-    onSuccess: () => { toast.success('Logged out'); signOut({ callbackUrl: '/login' }); },
-    onError: () => { signOut({ callbackUrl: '/login' }); },
-  })
-
   const saveMutation = useMutation({
     mutationFn: (data: any) => fetch('/api/user-settings/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()),
     onSuccess: () => { toast.success('Profile updated'); update(); },
@@ -242,68 +215,6 @@ function AccountSettings() {
           <div className="space-y-1.5"><Label className="text-sm font-medium">Current Password</Label><div className="relative"><Input type={showCurrentPw ? 'text' : 'password'} placeholder="Enter current password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="h-10 rounded-xl bg-muted/30 pr-10" /><button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)} className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground">{showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
           <div className="space-y-1.5"><Label className="text-sm font-medium">New Password</Label><div className="relative"><Input type={showNewPw ? 'text' : 'password'} placeholder="Enter new password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-10 rounded-xl bg-muted/30 pr-10" /><button type="button" onClick={() => setShowNewPw(!showNewPw)} className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground">{showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
           <Button onClick={() => passwordMutation.mutate({ currentPassword, newPassword })} disabled={passwordMutation.isPending || !currentPassword || !newPassword} variant="outline" className="rounded-xl">Update Password</Button>
-        </div>
-      </Section>
-      <Section title="Active Sessions">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm text-muted-foreground">Manage devices where you&apos;re logged in.</p>
-          {sessionList.length > 1 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs text-destructive"
-              disabled={logoutMutation.isPending}
-              onClick={() => logoutMutation.mutate()}
-            >
-              Log out all
-            </Button>
-          )}
-        </div>
-        <div className="space-y-2">
-          {sessionList.map((s: any) => {
-            const isCurrentSession = s.isCurrent
-            return (
-              <div
-                key={s.id}
-                className={cn(
-                  "flex items-center justify-between p-3 rounded-xl border",
-                  isCurrentSession
-                    ? "border-border/30 bg-muted/20 opacity-60"
-                    : "border-border/50 hover:bg-muted/30 transition-colors"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  {s.device === 'Mobile' ? <Smartphone className="h-4 w-4 text-muted-foreground" /> : <Laptop className="h-4 w-4 text-muted-foreground" />}
-                  <div>
-                    <p className="text-sm flex items-center gap-2">
-                      {s.device || 'Unknown device'} · {s.browser || 'Unknown'}
-                      {isCurrentSession && (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                          Current
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{s.os || ''} · {s.ip || 'Unknown IP'} · {s.provider}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {isCurrentSession ? 'Active now' : `Last active ${new Date(s.lastActiveAt || s.last_active_at).toLocaleString()}`}
-                    </p>
-                  </div>
-                </div>
-                {!isCurrentSession && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs text-destructive"
-                    disabled={revokeMutation.isPending}
-                    onClick={() => revokeMutation.mutate(s.id)}
-                  >
-                    Revoke
-                  </Button>
-                )}
-              </div>
-            )
-          })}
-          {sessionList.length === 0 && <p className="text-sm text-muted-foreground">No active sessions</p>}
         </div>
       </Section>
       <Section title="Danger Zone">

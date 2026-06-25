@@ -159,13 +159,6 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             </div>
             <LogOut className="h-4 w-4 text-muted-foreground shrink-0 xl:block" 
             onClick={async () => {
-              try {
-                await fetch('/api/sessions', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ action: 'revoke_all' }),
-                })
-              } catch {}
               onMobileClose()
               signOut({ callbackUrl: '/login' })
             }}

@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       .where(eq(users.id, id))
 
     await db.delete(verificationTokens)
-      .where(eq(verificationTokens.id, verificationToken.id))
+      .where(and(eq(verificationTokens.identifier, `verify:${id}`), eq(verificationTokens.token, token)))
 
     return NextResponse.redirect(new URL('/login?verified=true', request.url))
   } catch (error) {

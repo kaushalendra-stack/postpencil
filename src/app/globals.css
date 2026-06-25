@@ -82,6 +82,15 @@
 
   body {
     @apply bg-background text-foreground;
+    cursor: none !important;
+  }
+
+  a, button, [role="button"], input, textarea, select, [contenteditable], [tabindex] {
+    cursor: none !important;
+  }
+
+  * {
+    cursor: none !important;
   }
 }
 
