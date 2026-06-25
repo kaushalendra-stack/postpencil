@@ -3,7 +3,7 @@ import { FeedTabs } from '@/components/feed/feed-tabs'
 
 export default function HomePage() {
   return (
-    <MainLayout title="Home">
+    <MainLayout title='Home'>
       <FeedTabs />
     </MainLayout>
   )

@@ -97,7 +97,7 @@ export const posts = mysqlTable('posts', {
 
 export const files = mysqlTable('files', {
   id: varchar('id', { length: 36 }).primaryKey(),
-  postId: varchar('post_id', { length: 36 }).notNull().references(() => posts.id, { onDelete: 'cascade' }),
+  postId: varchar('post_id', { length: 36 }).references(() => posts.id, { onDelete: 'set null' }),
   fileName: varchar('file_name', { length: 255 }),
   originalName: varchar('original_name', { length: 255 }),
   fileUrl: text('file_url'),

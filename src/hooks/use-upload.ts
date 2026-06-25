@@ -14,10 +14,11 @@ export function useUpload({ onSuccess }: UseUploadOptions = {}) {
   const [isUploading, setIsUploading] = useState(false)
 
   const upload = useCallback(
-    (file: File) => {
+    (file: File, postId?: string) => {
       return new Promise<any>((resolve, reject) => {
         const formData = new FormData()
         formData.append('file', file)
+        if (postId) formData.append('postId', postId)
 
         const xhr = new XMLHttpRequest()
 

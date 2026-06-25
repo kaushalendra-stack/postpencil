@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
 import { useMutation } from '@tanstack/react-query'
@@ -21,6 +21,51 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+
+function TagChip({ tag, onRemove, onEdit }: { tag: string; onRemove: () => void; onEdit: (newTag: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [editValue, setEditValue] = useState(tag)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleClick = () => {
+    setEditing(true)
+    setEditValue(tag)
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+
+  const handleBlur = () => {
+    setEditing(false)
+    onEdit(editValue)
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); handleBlur() }
+          if (e.key === 'Escape') { setEditing(false); setEditValue(tag) }
+        }}
+        className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary border border-primary/30 outline-none min-w-[60px]"
+      />
+    )
+  }
+
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary cursor-pointer hover:bg-primary/20 transition-colors"
+      onClick={handleClick}
+    >
+      {tag}
+      <button onClick={(e) => { e.stopPropagation(); onRemove() }} className="rounded-full p-0.5 hover:bg-primary/20">
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  )
+}
 
 function getFileIcon(name: string) {
   const ext = name.split('.').pop()?.toLowerCase()
@@ -96,30 +141,28 @@ export function UploadForm() {
       return
     }
 
-    for (const file of selectedFiles) {
-      await upload(file)
-    }
-
-    const res = await fetch('/api/posts', {
+    // Step 1: Create the post first
+    const postRes = await fetch('/api/posts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title,
-        description,
-        subject,
-        course,
-        semester,
-        college,
-        tags,
-      }),
+      body: JSON.stringify({ title, description, subject, course, semester, college, tags }),
     })
 
-    if (res.ok) {
-      toast.success('Resource published!')
-      router.push('/')
-    } else {
-      toast.error('Failed to publish')
+    if (!postRes.ok) {
+      toast.error('Failed to create post')
+      return
     }
+
+    const postData = await postRes.json()
+    const postId = postData.id
+
+    // Step 2: Upload files with postId
+    for (const file of selectedFiles) {
+      await upload(file, postId)
+    }
+
+    toast.success('Resource published!')
+    router.push('/')
   }
 
   return (
@@ -253,14 +296,28 @@ export function UploadForm() {
           <div className="flex gap-2">
             <Input
               value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  addTag()
+              onChange={(e) => {
+                const val = e.target.value
+                if (val.includes(',') || val.includes('，')) {
+                  const parts = val.split(/[,，]/)
+                  parts.forEach((part) => {
+                    const trimmed = part.trim()
+                    if (trimmed && !tags.includes(trimmed)) {
+                      setTags((prev) => [...prev, trimmed])
+                    }
+                  })
+                  setTagInput('')
+                } else {
+                  setTagInput(val)
                 }
               }}
-              placeholder="Add a tag"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); addTag() }
+                if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+                  setTags((prev) => prev.slice(0, -1))
+                }
+              }}
+              placeholder="Type a tag and press comma"
             />
             <Button type="button" variant="outline" size="icon" onClick={addTag}>
               <Plus className="h-4 w-4" />
@@ -268,19 +325,19 @@ export function UploadForm() {
           </div>
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <span
+              {tags.map((tag, index) => (
+                <TagChip
                   key={tag}
-                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
-                >
-                  {tag}
-                  <button
-                    onClick={() => removeTag(tag)}
-                    className="rounded-full p-0.5 hover:bg-primary/20"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
+                  tag={tag}
+                  onRemove={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                  onEdit={(newTag) => {
+                    if (newTag.trim() && newTag.trim() !== tag) {
+                      setTags((prev) => prev.map((t, i) => i === index ? newTag.trim() : t))
+                    } else if (!newTag.trim()) {
+                      setTags((prev) => prev.filter((_, i) => i !== index))
+                    }
+                  }}
+                />
               ))}
             </div>
           )}

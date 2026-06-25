@@ -13,9 +13,10 @@ interface MainLayoutProps {
   children: React.ReactNode
   title?: string
   showBack?: boolean
+  hideTopBar?: boolean
 }
 
-export function MainLayout({ children, title, showBack = false }: MainLayoutProps) {
+export function MainLayout({ children, title, showBack = false, hideTopBar = false }: MainLayoutProps) {
   const { data: session, status } = useSession()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -42,7 +43,7 @@ export function MainLayout({ children, title, showBack = false }: MainLayoutProp
     <div className="flex min-h-screen">
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
       <div className="flex flex-1 flex-col min-w-0">
-        <TopBar title={title} onMenuClick={() => setMobileOpen(true)} showBack={showBack} />
+        {!hideTopBar && <TopBar title={title} onMenuClick={() => setMobileOpen(true)} showBack={showBack} />}
         <main className="flex-1 pb-20 lg:pb-0">{children}</main>
       </div>
       <MobileNav />

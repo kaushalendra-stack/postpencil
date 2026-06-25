@@ -16,22 +16,18 @@ export function FeedTabs() {
   return (
     <div>
       <div className="sticky top-14 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        <div className="flex gap-1 p-1">
+        <div className="flex">
           {tabs.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setValue(tab.value)}
               className={cn(
-                'flex-1 px-4 py-2.5 text-sm font-medium transition-colors relative',
-                value === tab.value
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
+                'flex-1 py-3 text-[13px] font-semibold transition-all duration-200 relative',
+                value === tab.value ? 'text-foreground' : 'text-muted-foreground hover:text-foreground/70'
               )}
             >
               {tab.label}
-              {value === tab.value && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground" />
-              )}
+              <span className={cn('absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] rounded-full bg-foreground transition-all duration-300 ease-out', value === tab.value ? 'w-12 opacity-100' : 'w-0 opacity-0')} />
             </button>
           ))}
         </div>

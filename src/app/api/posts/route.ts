@@ -3,6 +3,65 @@ import { db } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
 import { posts, users, files, postTags, tags, likes, bookmarks } from '@/lib/db/schema';
 import { eq, and, desc, sql, count } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { title, description, subject, course, semester, college, tags: tagNames } = body;
+
+    if (!title?.trim()) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    const postId = randomUUID();
+
+    await db.insert(posts).values({
+      id: postId,
+      userId: session.user.id,
+      title: title.trim(),
+      description: description || null,
+      subject: subject || null,
+      course: course || null,
+      semester: semester || null,
+      college: college || null,
+      resourceType: 'document',
+      isPublished: true,
+    });
+
+    // Handle tags
+    if (tagNames && Array.isArray(tagNames) && tagNames.length > 0) {
+      for (const tagName of tagNames.slice(0, 10)) {
+        const slug = tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const trimmedName = tagName.trim().slice(0, 100);
+
+        let tag = await db.query.tags.findFirst({
+          where: eq(tags.slug, slug),
+        });
+
+        if (!tag) {
+          const tagId = randomUUID();
+          await db.insert(tags).values({ id: tagId, name: trimmedName, slug, postsCount: 1 });
+          tag = { id: tagId, name: trimmedName, slug, postsCount: 1 } as any;
+        } else {
+          await db.update(tags).set({ postsCount: (tag.postsCount || 0) + 1 }).where(eq(tags.id, tag.id));
+        }
+
+        await db.insert(postTags).values({ postId, tagId: tag.id }).catch(() => {});
+      }
+    }
+
+    return NextResponse.json({ id: postId, message: 'Post created' }, { status: 201 });
+  } catch (error) {
+    console.error('Create post error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {

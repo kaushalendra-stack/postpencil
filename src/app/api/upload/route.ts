@@ -3,8 +3,9 @@ import { auth } from '@/lib/auth/config';
 import { db } from '@/lib/db';
 import { files } from '@/lib/db/schema';
 import { randomUUID } from 'crypto';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+
+const PHP_UPLOAD_URL = process.env.NEXT_PUBLIC_UPLOAD_URL || 'https://postpencil.protoolvault.in';
+const UPLOAD_API_KEY = process.env.UPLOAD_API_KEY || '';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +16,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const postId = formData.get('postId') as string || '';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -25,16 +27,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size exceeds 50MB limit' }, { status: 400 });
     }
 
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    await mkdir(uploadDir, { recursive: true });
+    // Upload to PHP server
+    const phpFormData = new FormData();
+    phpFormData.append('file', file);
+    phpFormData.append('api_key', UPLOAD_API_KEY);
 
-    const ext = file.name.split('.').pop() || '';
-    const uniqueName = `${randomUUID()}.${ext}`;
-    const filePath = join(uploadDir, uniqueName);
+    const res = await fetch(`${PHP_UPLOAD_URL}/upload.php`, {
+      method: 'POST',
+      body: phpFormData,
+      signal: AbortSignal.timeout(120000),
+    });
 
-    const bytes = await file.arrayBuffer();
-    await writeFile(filePath, Buffer.from(bytes));
+    const data = await res.json();
 
+    if (!data.success) {
+      return NextResponse.json({ error: data.error || 'Upload failed' }, { status: 500 });
+    }
+
+    // Determine file type
     const mimeType = file.type;
     let fileType: string = 'document';
     if (mimeType.startsWith('image/')) fileType = 'image';
@@ -42,24 +52,24 @@ export async function POST(request: NextRequest) {
     else if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) fileType = 'presentation';
     else if (mimeType.includes('zip') || mimeType.includes('compressed')) fileType = 'zip';
 
+    // Save file record to DB
     const fileId = randomUUID();
-
     await db.insert(files).values({
       id: fileId,
-      postId: '',
-      fileName: uniqueName,
+      postId: postId || null,
+      fileName: data.file_name || '',
       originalName: file.name,
-      fileUrl: `/uploads/${uniqueName}`,
+      fileUrl: data.file_url || '',
       fileSize: file.size,
       mimeType,
-      fileType: fileType as 'pdf' | 'image' | 'document' | 'presentation' | 'zip',
+      fileType: fileType as any,
     });
 
     return NextResponse.json({
       id: fileId,
-      fileName: uniqueName,
+      fileName: data.file_name || '',
       originalName: file.name,
-      fileUrl: `/uploads/${uniqueName}`,
+      fileUrl: data.file_url || '',
       fileSize: file.size,
       mimeType,
       fileType,
