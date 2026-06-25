@@ -1,23 +1,9 @@
-import nodemailer from 'nodemailer';
 import { db } from '@/lib/db';
 import { emailLogs } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
-function getTransporter() {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 465,
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 5000,
-    socketTimeout: 15000,
-  });
-}
+const PHP_EMAIL_URL = process.env.PHP_EMAIL_URL || 'https://postpencil.protoolvault.in/send-email.php';
 
 interface SendEmailOptions {
   to: string;
@@ -30,14 +16,14 @@ interface SendEmailOptions {
 export async function sendEmail({ to, subject, html, purpose, userId }: SendEmailOptions) {
   const id = randomUUID();
 
-  // Always log the attempt to DB first
+  // Log attempt to DB
   try {
     await db.insert(emailLogs).values({
       id,
       userId: userId || null,
       to,
       subject,
-      body: html.substring(0, 5000), // Truncate to avoid issues
+      body: html.substring(0, 5000),
       purpose,
       status: 'pending',
     });
@@ -46,31 +32,28 @@ export async function sendEmail({ to, subject, html, purpose, userId }: SendEmai
   }
 
   try {
-    const transporter = getTransporter()
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"PostPencil" <${process.env.SMTP_USER}>`,
-      to,
-      subject,
-      html,
+    const res = await fetch(PHP_EMAIL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, subject, html }),
+      signal: AbortSignal.timeout(30000),
     });
 
-    try {
+    const data = await res.json();
+
+    if (res.ok && data.success) {
       await db.update(emailLogs).set({ status: 'sent' }).where(eq(emailLogs.id, id));
-    } catch (updateErr) {
-      console.error('[Email] Failed to update log status:', updateErr);
-    }
-
-    return true;
-  } catch (error) {
-    const errMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Email] Send failed:', errMsg);
-
-    try {
+      return true;
+    } else {
+      const errMsg = data.error || 'PHP endpoint returned error';
+      console.error('[Email] Send failed:', errMsg);
       await db.update(emailLogs).set({ status: 'failed', errorMessage: errMsg }).where(eq(emailLogs.id, id));
-    } catch (updateErr) {
-      console.error('[Email] Failed to update log status:', updateErr);
+      return false;
     }
-
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : 'Network error';
+    console.error('[Email] Send failed:', errMsg);
+    await db.update(emailLogs).set({ status: 'failed', errorMessage: errMsg }).where(eq(emailLogs.id, id));
     return false;
   }
 }
