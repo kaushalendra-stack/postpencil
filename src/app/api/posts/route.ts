@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, subject, course, semester, college, tags: tagNames } = body;
+    const { title, description, subject, course, semester, college, tags: tagNames, threadId, threadOrder } = body;
 
     if (!title?.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -31,6 +31,8 @@ export async function POST(request: NextRequest) {
       semester: semester || null,
       college: college || null,
       resourceType: 'document',
+      threadId: threadId || null,
+      threadOrder: threadOrder || 0,
       isPublished: true,
     });
 

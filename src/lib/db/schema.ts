@@ -83,6 +83,8 @@ export const posts = mysqlTable('posts', {
   semester: varchar('semester', { length: 20 }),
   college: varchar('college', { length: 200 }),
   resourceType: mysqlEnum('resource_type', ['pdf', 'image', 'document', 'presentation', 'zip', 'text']),
+  threadId: varchar('thread_id', { length: 36 }),
+  threadOrder: int('thread_order').default(0),
   likesCount: int('likes_count').default(0),
   commentsCount: int('comments_count').default(0),
   downloadsCount: int('downloads_count').default(0),
@@ -269,6 +271,9 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   emailLogs: many(emailLogs),
   tickets: many(tickets),
   settings: one(userSettings),
+  discussions: many(discussions),
+  discussionLikes: many(discussionLikes),
+  discussionReplies: many(discussionReplies),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -395,6 +400,70 @@ export const emailLogsRelations = relations(emailLogs, ({ one }) => ({
 export const userSettingsRelations = relations(userSettings, ({ one }) => ({
   user: one(users, {
     fields: [userSettings.userId],
+    references: [users.id],
+  }),
+}));
+export const discussions = mysqlTable('discussions', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  userId: varchar('user_id', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  imageUrl: text('image_url'),
+  likesCount: int('likes_count').default(0),
+  repliesCount: int('replies_count').default(0),
+  viewsCount: int('views_count').default(0),
+  isPublished: boolean('is_published').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  deletedAt: timestamp('deleted_at'),
+});
+
+export const discussionLikes = mysqlTable('discussion_likes', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  userId: varchar('user_id', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  discussionId: varchar('discussion_id', { length: 36 }).notNull().references(() => discussions.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  uniqueIndex('discussion_likes_user_id_discussion_id_idx').on(table.userId, table.discussionId),
+]);
+
+export const discussionReplies = mysqlTable('discussion_replies', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  discussionId: varchar('discussion_id', { length: 36 }).notNull().references(() => discussions.id, { onDelete: 'cascade' }),
+  userId: varchar('user_id', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  parentId: varchar('parent_id', { length: 36 }),
+  content: text('content').notNull(),
+  likesCount: int('likes_count').default(0),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const discussionsRelations = relations(discussions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [discussions.userId],
+    references: [users.id],
+  }),
+  replies: many(discussionReplies),
+  likes: many(discussionLikes),
+}));
+
+export const discussionLikesRelations = relations(discussionLikes, ({ one }) => ({
+  user: one(users, {
+    fields: [discussionLikes.userId],
+    references: [users.id],
+  }),
+  discussion: one(discussions, {
+    fields: [discussionLikes.discussionId],
+    references: [discussions.id],
+  }),
+}));
+
+export const discussionRepliesRelations = relations(discussionReplies, ({ one }) => ({
+  discussion: one(discussions, {
+    fields: [discussionReplies.discussionId],
+    references: [discussions.id],
+  }),
+  user: one(users, {
+    fields: [discussionReplies.userId],
     references: [users.id],
   }),
 }));

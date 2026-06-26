@@ -10,6 +10,8 @@ export function useNotifications() {
       if (!res.ok) return { data: [], unreadCount: 0 }
       return res.json()
     },
-    refetchInterval: 30 * 1000,
+    refetchInterval: 60 * 1000,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
   })
 }

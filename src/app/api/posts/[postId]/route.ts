@@ -23,6 +23,8 @@ export async function GET(
         semester: posts.semester,
         college: posts.college,
         resourceType: posts.resourceType,
+        threadId: posts.threadId,
+        threadOrder: posts.threadOrder,
         likesCount: posts.likesCount,
         commentsCount: posts.commentsCount,
         downloadsCount: posts.downloadsCount,

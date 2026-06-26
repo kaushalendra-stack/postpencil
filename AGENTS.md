@@ -1,8 +1,8 @@
 # PostPencil — Complete Project Documentation
 
-> **Last Updated:** 2026-06-23
+> **Last Updated:** 2026-06-26
 > **Status:** Production-ready
-> **Stack:** Next.js 15 App Router + TypeScript + Tailwind CSS + Drizzle ORM + MySQL + Auth.js
+> **Stack:** Next.js 16 App Router + TypeScript + Tailwind CSS v4 + Drizzle ORM + MySQL + Auth.js
 
 ---
 
@@ -65,6 +65,8 @@ src/
 │   │   ├── search/page.tsx           # Search results
 │   │   ├── admin/page.tsx            # Admin dashboard
 │   │   ├── help/page.tsx             # Help center + tickets
+│   │   ├── discuss/page.tsx          # Discussion feed
+│   │   ├── discuss/[discussionId]/   # Discussion detail
 │   │   ├── post/[postId]/page.tsx    # Post detail
 │   │   └── user/[username]/page.tsx  # User profile
 │   └── api/
@@ -83,7 +85,14 @@ src/
 │       │   │   ├── like/route.ts     # Toggle like
 │       │   │   ├── comments/route.ts # GET/POST comments
 │       │   │   ├── bookmark/route.ts # Toggle bookmark
-│       │   │   └── download/route.ts # Record download
+│       │   │   ├── download/route.ts # Record download
+│       │   │   └── thread/route.ts   # Thread navigation
+│       ├── discussions/
+│       │   ├── route.ts              # GET/POST discussions
+│       │   ├── [id]/
+│       │   │   ├── route.ts          # GET/PATCH/DELETE discussion
+│       │   │   ├── like/route.ts     # Toggle like
+│       │   │   └── replies/route.ts  # GET/POST replies
 │       ├── users/
 │       │   ├── [username]/
 │       │   │   ├── route.ts          # GET/PATCH user profile
@@ -113,17 +122,28 @@ src/
 │   │   ├── sidebar.tsx               # Desktop sidebar (260px) + mobile overlay
 │   │   ├── topbar.tsx                # Sticky top bar with hamburger
 │   │   ├── mobile-nav.tsx            # Floating bottom nav
-│   │   └── main-layout.tsx           # Shell layout with auth guard
+│   │   ├── main-layout.tsx           # Shell layout with auth guard
+│   │   └── footer.tsx                # Minimal footer
 │   ├── post/
 │   │   ├── post-card.tsx             # Feed post card
-│   │   └── post-detail.tsx           # Full post view
+│   │   ├── post-detail.tsx           # Full post view
+│   │   ├── modern-post-detail.tsx    # Modern post detail with thread nav
+│   │   └── thread-nav.tsx            # Thread navigation component
 │   ├── feed/
 │   │   ├── feed-list.tsx             # Infinite scroll feed
 │   │   ├── feed-tabs.tsx             # For You / Following / Trending
-│   │   └── post-card-skeleton.tsx    # Loading skeleton
+│   │   ├── post-card-skeleton.tsx    # Loading skeleton
+│   │   ├── modern-feed.tsx           # Modern feed with tabs
+│   │   └── modern-post-card.tsx      # Modern post card component
 │   ├── comments/
 │   │   ├── comment-section.tsx       # Comment form + list
-│   │   └── comment-item.tsx          # Single comment
+│   │   ├── comment-item.tsx          # Single comment
+│   │   └── modern-comment-section.tsx # Modern comment section
+│   ├── discuss/
+│   │   ├── discussion-card.tsx       # Discussion list card
+│   │   ├── discussion-compose.tsx    # Discussion creation form
+│   │   ├── discussion-detail.tsx     # Discussion detail view
+│   │   └── discussion-feed.tsx       # Discussion feed list
 │   ├── user/
 │   │   ├── profile-header.tsx        # Profile banner + stats
 │   │   ├── user-profile.tsx          # Full profile page
@@ -146,6 +166,8 @@ src/
 │       ├── card.tsx, avatar.tsx, dialog.tsx, tabs.tsx
 │       ├── skeleton.tsx, label.tsx, dropdown-menu.tsx
 │       ├── tooltip.tsx, scroll-area.tsx
+│       ├── animations.tsx, theme-toggle.tsx
+│       ├── floating-theme-toggle.tsx, animated-cursor.tsx
 ├── lib/
 │   ├── db/
 │   │   ├── schema.ts                 # 20+ Drizzle tables + relations
@@ -155,6 +177,8 @@ src/
 │   │   └── options.ts                # Re-exports
 │   ├── email.ts                      # Nodemailer + email templates + DB logging
 │   ├── utils.ts                      # cn, formatNumber, formatDate, generateId, etc.
+│   ├── cache.ts                      # Caching utilities
+│   ├── seo.ts                        # SEO utilities and JSON-LD
 │   ├── types/index.ts                # TypeScript types
 │   └── validators.ts                 # Zod schemas
 ├── hooks/
@@ -163,6 +187,7 @@ src/
 │   ├── use-user.ts                   # useFollowUser, useUser, useUserPosts
 │   ├── use-notifications.ts          # useNotifications
 │   ├── use-upload.ts                 # useUpload with progress
+│   ├── use-discussions.ts            # useDiscussions, useCreateDiscussion
 │   └── use-session-heartbeat.ts      # 5min session heartbeat
 ├── providers/
 │   ├── index.tsx                     # Providers barrel (AuthProvider, ThemeProvider, QueryProvider, TooltipProvider, Toaster)
@@ -251,6 +276,7 @@ All tables use `varchar(36)` UUIDs as primary keys, MySQL `timestamp` for dates,
 7. **Session tracking** — every login logged with device/browser/OS info
 8. **Email logging** — every email sent logged to `email_logs` table with purpose and body
 9. **Preferences saved to DB** — all notification/privacy/appearance toggles persist
+10. **Root page serves landing** — `/` shows landing page for unauthenticated users; authenticated users redirect to `/home` via client-side useEffect
 
 ---
 

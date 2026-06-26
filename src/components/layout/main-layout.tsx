@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { Sidebar } from './sidebar'
 import { TopBar } from './topbar'
 import { MobileNav } from './mobile-nav'
+import { Footer } from './footer'
 
 const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password']
 
@@ -45,6 +46,7 @@ export function MainLayout({ children, title, showBack = false, hideTopBar = fal
       <div className="flex flex-1 flex-col min-w-0">
         {!hideTopBar && <TopBar title={title} onMenuClick={() => setMobileOpen(true)} showBack={showBack} />}
         <main className="flex-1 pb-20 lg:pb-0">{children}</main>
+        <Footer />
       </div>
       <MobileNav />
     </div>

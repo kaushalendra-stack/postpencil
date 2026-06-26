@@ -14,6 +14,8 @@ import {
   FileVideo,
   X,
   Plus,
+  Layers,
+  ArrowRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUpload } from '@/hooks/use-upload'
@@ -80,10 +82,7 @@ function getFileIcon(name: string) {
 export function UploadForm() {
   const router = useRouter()
   const { upload, progress, isUploading } = useUpload({
-    onSuccess: () => {
-      toast.success('Resource published!')
-      router.push('/')
-    },
+    onSuccess: () => {},
   })
 
   const [title, setTitle] = useState('')
@@ -95,6 +94,14 @@ export function UploadForm() {
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+
+  // Thread state
+  const [isThread, setIsThread] = useState(false)
+  const [threadId, setThreadId] = useState<string | null>(null)
+  const [threadOrder, setThreadOrder] = useState(0)
+  const [threadTitle, setThreadTitle] = useState('')
+  const [publishedPostId, setPublishedPostId] = useState<string | null>(null)
+  const [publishedCount, setPublishedCount] = useState(0)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setSelectedFiles((prev) => [...prev, ...acceptedFiles])
@@ -141,11 +148,20 @@ export function UploadForm() {
       return
     }
 
-    // Step 1: Create the post first
     const postRes = await fetch('/api/posts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description, subject, course, semester, college, tags }),
+      body: JSON.stringify({
+        title: title.trim(),
+        description,
+        subject,
+        course,
+        semester,
+        college,
+        tags,
+        threadId: threadId || undefined,
+        threadOrder: threadOrder,
+      }),
     })
 
     if (!postRes.ok) {
@@ -156,18 +172,102 @@ export function UploadForm() {
     const postData = await postRes.json()
     const postId = postData.id
 
-    // Step 2: Upload files with postId
     for (const file of selectedFiles) {
       await upload(file, postId)
     }
 
-    toast.success('Resource published!')
-    router.push('/')
+    if (isThread && !threadId) {
+      setThreadId(postId)
+      setPublishedPostId(postId)
+      setPublishedCount(1)
+      setTitle('')
+      setDescription('')
+      setSelectedFiles([])
+      setThreadTitle(title.trim())
+      toast.success('Thread started! Add more parts or finish.')
+    } else if (threadId) {
+      setPublishedCount((c) => c + 1)
+      setThreadOrder((o) => o + 1)
+      setTitle('')
+      setDescription('')
+      setSelectedFiles([])
+      toast.success(`Part ${threadOrder + 2} added!`)
+    } else {
+      toast.success('Resource published!')
+      router.push('/')
+    }
+  }
+
+  const handleFinishThread = () => {
+    if (publishedPostId) {
+      router.push(`/post/${publishedPostId}`)
+    } else {
+      router.push('/')
+    }
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4">
-      <h1 className="text-2xl font-bold tracking-tight">Upload Resource</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">
+          {threadId ? `Add to Thread` : 'Upload Resource'}
+        </h1>
+      </div>
+
+      {/* Thread status bar */}
+      {threadId && (
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 animate-float-up">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
+              <Layers className="h-5 w-5 text-primary/70" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold">{threadTitle}</p>
+              <p className="text-xs text-muted-foreground/50">{publishedCount} part{publishedCount !== 1 ? 's' : ''} published</p>
+            </div>
+            <button
+              onClick={handleFinishThread}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Finish Thread
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="flex gap-1 mt-3">
+            {Array.from({ length: publishedCount }).map((_, i) => (
+              <div key={i} className="h-1.5 flex-1 rounded-full bg-primary/60" />
+            ))}
+            <div className="h-1.5 flex-1 rounded-full bg-primary/20 border border-dashed border-primary/30" />
+          </div>
+        </div>
+      )}
+
+      {/* Thread toggle (only show when not already in a thread) */}
+      {!threadId && (
+        <div className="flex items-center justify-between rounded-2xl border border-border/40 bg-card/50 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/15 to-pink-500/10">
+              <Layers className="h-5 w-5 text-violet-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Start a thread</p>
+              <p className="text-xs text-muted-foreground/50">Chain multiple resources together</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsThread(!isThread)}
+            className={cn(
+              'relative w-11 h-6 rounded-full transition-colors duration-200',
+              isThread ? 'bg-primary' : 'bg-muted'
+            )}
+          >
+            <span className={cn(
+              'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200',
+              isThread && 'translate-x-5'
+            )} />
+          </button>
+        </div>
+      )}
 
       <div
         {...getRootProps()}
@@ -350,7 +450,7 @@ export function UploadForm() {
         onClick={handlePublish}
         disabled={isUploading || !title.trim() || selectedFiles.length === 0}
       >
-        {isUploading ? 'Publishing...' : 'Publish Resource'}
+        {isUploading ? 'Publishing...' : threadId ? `Add Part ${threadOrder + 1}` : 'Publish Resource'}
       </Button>
     </div>
   )

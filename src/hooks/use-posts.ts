@@ -3,6 +3,8 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 
+const POST_CACHE_TIME = 10 * 60 * 1000
+
 export function useFeed(feedType: string = 'latest') {
   return useInfiniteQuery({
     queryKey: ['feed', feedType],
@@ -10,6 +12,8 @@ export function useFeed(feedType: string = 'latest') {
       fetch(`/api/posts?page=${pageParam}&feed=${feedType}`).then((res) => res.json()),
     getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.page + 1 : undefined,
     initialPageParam: 1,
+    staleTime: POST_CACHE_TIME,
+    gcTime: 30 * 60 * 1000,
   })
 }
 

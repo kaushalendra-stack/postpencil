@@ -8,7 +8,7 @@ import { useTheme } from 'next-themes'
 import {
   Home, Compass, Bell, Bookmark, Settings, HelpCircle,
   Sun, Moon, LogOut, ChevronDown, X, Upload,
-  User,
+  User, MessageSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -21,6 +21,7 @@ interface SidebarProps {
 const navItems = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Explore', href: '/explore', icon: Compass },
+  { label: 'Discuss', href: '/discuss', icon: MessageSquare },
   { label: 'Notifications', href: '/notifications', icon: Bell },
   { label: 'Bookmarks', href: '/bookmarks', icon: Bookmark },
 ]

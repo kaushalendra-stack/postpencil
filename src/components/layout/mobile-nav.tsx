@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Compass, Bell, Bookmark, Plus } from 'lucide-react'
+import { Home, Compass, Bell, Bookmark, Plus, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useNotifications } from '@/hooks/use-notifications'
 
 const navItems = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Explore', href: '/explore', icon: Compass },
-  { label: 'Notifications', href: '/notifications', icon: Bell },
+  { label: 'Discuss', href: '/discuss', icon: MessageSquare },
   { label: 'Saved', href: '/bookmarks', icon: Bookmark },
 ]
 

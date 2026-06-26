@@ -18,6 +18,7 @@ export async function GET(
         content: comments.content,
         likesCount: comments.likesCount,
         createdAt: comments.createdAt,
+        parentId: comments.parentId,
         user: {
           id: users.id,
           name: users.name,
@@ -27,10 +28,34 @@ export async function GET(
       })
       .from(comments)
       .innerJoin(users, eq(comments.userId, users.id))
-      .where(eq(comments.postId, postId))
+      .where(and(eq(comments.postId, postId), sql`${comments.parentId} IS NULL`))
       .orderBy(desc(comments.createdAt));
 
-    return NextResponse.json(data, { status: 200 });
+    const repliesData = await db
+      .select({
+        id: comments.id,
+        content: comments.content,
+        likesCount: comments.likesCount,
+        createdAt: comments.createdAt,
+        parentId: comments.parentId,
+        user: {
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          image: users.image,
+        },
+      })
+      .from(comments)
+      .innerJoin(users, eq(comments.userId, users.id))
+      .where(and(eq(comments.postId, postId), sql`${comments.parentId} IS NOT NULL`))
+      .orderBy(desc(comments.createdAt));
+
+    const threaded = data.map((comment) => ({
+      ...comment,
+      replies: repliesData.filter((r) => r.parentId === comment.id),
+    }));
+
+    return NextResponse.json(threaded, { status: 200 });
   } catch (error) {
     console.error('Get comments error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

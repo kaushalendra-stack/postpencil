@@ -6,7 +6,15 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin', '/api/'],
+        disallow: [
+          '/admin',
+          '/api/',
+          '/settings',
+          '/bookmarks',
+          '/notifications',
+          '/upload',
+          '/search',
+        ],
       },
     ],
     sitemap: 'https://postpencil.com/sitemap.xml',
