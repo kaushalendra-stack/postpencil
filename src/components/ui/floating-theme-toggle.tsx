@@ -1,63 +1,112 @@
 'use client'
 
 import { useTheme } from 'next-themes'
-import { Moon, Sun } from 'lucide-react'
-import { useState, useRef, useEffect } from 'react'
+import { Moon, Sun, Monitor } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 
-const STORAGE_KEY = 'pp-theme-side'
-const SIZE = 36
-const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'
+const STORAGE_KEY = 'pp-theme-corner'
+type Corner = 'tl' | 'tr' | 'bl' | 'br'
 
-function getStoredSide(): 'left' | 'right' {
-  try { return (localStorage.getItem(STORAGE_KEY) as 'left' | 'right') || 'right' } catch { return 'right' }
+function getCornerPos(c: Corner, w: number, h: number) {
+  switch (c) {
+    case 'tl': return { x: 16, y: 16 }
+    case 'tr': return { x: w - 56, y: 16 }
+    case 'bl': return { x: 16, y: h - 56 }
+    case 'br': return { x: w - 56, y: h - 56 }
+  }
+}
+
+function nearestCorner(cx: number, cy: number, w: number, h: number): Corner {
+  const corners: [Corner, number][] = [
+    ['tl', cx * cx + cy * cy],
+    ['tr', (w - cx) * (w - cx) + cy * cy],
+    ['bl', cx * cx + (h - cy) * (h - cy)],
+    ['br', (w - cx) * (w - cx) + (h - cy) * (h - cy)],
+  ]
+  return corners.reduce((a, b) => (b[1] < a[1] ? b : a))[0]
 }
 
 export function FloatingThemeToggle() {
   const { theme, setTheme } = useTheme()
-  const [side, setSide] = useState<'left' | 'right'>('right')
-  const [y, setY] = useState(0)
-  const [dragging, setDragging] = useState(false)
+  const [corner, setCorner] = useState<Corner>('br')
+  const [open, setOpen] = useState(false)
   const [ready, setReady] = useState(false)
-  const startRef = useRef({ my: 0, sy: 0 })
+  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const [animating, setAnimating] = useState(false)
+  const dragging = useRef(false)
   const didMove = useRef(false)
+  const startRef = useRef({ mx: 0, my: 0, sx: 0, sy: 0 })
   const initDone = useRef(false)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const winRef = useRef({ w: 0, h: 0 })
 
   useEffect(() => {
     if (initDone.current) return
     initDone.current = true
-    const s = getStoredSide()
-    setSide(s)
-    setY(Math.max(16, Math.min(window.innerHeight - SIZE - 16, window.innerHeight / 2 - SIZE / 2)))
+    const w = window.innerWidth
+    const h = window.innerHeight
+    winRef.current = { w, h }
+    let c: Corner = 'br'
+    try { c = (localStorage.getItem(STORAGE_KEY) as Corner) || 'br' } catch {}
+    setCorner(c)
+    setPos(getCornerPos(c, w, h))
     requestAnimationFrame(() => setReady(true))
+
+    const onResize = () => {
+      const nw = window.innerWidth
+      const nh = window.innerHeight
+      winRef.current = { w: nw, h: nh }
+      setPos(getCornerPos(c, nw, nh))
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  // Snap X based on side
-  const snapX = side === 'left' ? 12 : (typeof window !== 'undefined' ? window.innerWidth - SIZE - 12 : 9999)
-
-  // Save side preference
   useEffect(() => {
-    if (ready) try { localStorage.setItem(STORAGE_KEY, side) } catch {}
-  }, [side, ready])
+    if (ready) try { localStorage.setItem(STORAGE_KEY, corner) } catch {}
+  }, [corner, ready])
+
+  useEffect(() => {
+    if (!open) return
+    const onClick = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [open])
+
+  const snapTo = useCallback((c: Corner) => {
+    const { w, h } = winRef.current
+    setCorner(c)
+    setAnimating(true)
+    setPos(getCornerPos(c, w, h))
+    setTimeout(() => setAnimating(false), 300)
+  }, [])
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return
     e.preventDefault()
     didMove.current = false
-    startRef.current = { my: e.clientY, sy: y }
-    setDragging(true)
+    startRef.current = { mx: e.clientX, my: e.clientY, sx: pos.x, sy: pos.y }
+    dragging.current = true
 
     const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - startRef.current.mx
       const dy = ev.clientY - startRef.current.my
-      if (Math.abs(dy) > 2) didMove.current = true
-      const ny = Math.max(12, Math.min(window.innerHeight - SIZE - 12, startRef.current.sy + dy))
-      setY(ny)
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didMove.current = true
+      if (!didMove.current) return
+      setOpen(false)
+      setAnimating(false)
+      setPos({
+        x: Math.max(8, Math.min(winRef.current.w - 48, startRef.current.sx + dx)),
+        y: Math.max(8, Math.min(winRef.current.h - 48, startRef.current.sy + dy)),
+      })
     }
 
     const onUp = () => {
-      setDragging(false)
-      // Only snap to opposite edge if user actually dragged
+      dragging.current = false
       if (didMove.current) {
-        setSide(side === 'left' ? 'right' : 'left')
+        snapTo(nearestCorner(pos.x, pos.y, winRef.current.w, winRef.current.h))
       }
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
@@ -67,51 +116,66 @@ export function FloatingThemeToggle() {
     window.addEventListener('pointerup', onUp)
   }
 
-  const toggle = () => {
+  const handleClick = () => {
     if (didMove.current) return
-    setTheme(theme === 'dark' ? 'light' : 'dark')
+    setOpen((v) => !v)
   }
 
   if (!ready) return null
-
   const isDark = theme === 'dark'
+  const isSystem = theme === 'system'
 
   return (
     <div
-      onPointerDown={onPointerDown}
-      onClick={toggle}
-      className={cn(
-        "fixed z-[9999] flex items-center justify-center rounded-full",
-        "border border-black/10 dark:border-white/10",
-        "backdrop-blur-xl cursor-grab select-none touch-none",
-        "active:cursor-grabbing",
-        dragging
-          ? "bg-white dark:bg-zinc-800 shadow-xl scale-110"
-          : "bg-white/90 dark:bg-zinc-800/90 shadow-md hover:shadow-lg hover:scale-105",
-        "transition-transform transition-shadow duration-200",
-      )}
+      ref={panelRef}
+      className="fixed z-[9999] select-none touch-none"
       style={{
-        width: SIZE,
-        height: SIZE,
-        left: snapX,
-        top: y,
-        transition: dragging
-          ? 'transform 0.15s, box-shadow 0.15s'
-          : `left 0.3s ${EASE}, top 0.3s ${EASE}, transform 0.2s, box-shadow 0.2s`,
+        left: pos.x,
+        top: pos.y,
+        transition: dragging.current
+          ? undefined
+          : 'left 0.3s cubic-bezier(0.22,1,0.36,1), top 0.3s cubic-bezier(0.22,1,0.36,1)',
       }}
     >
-      <Sun className={cn(
-        "h-4 w-4 text-amber-500 transition-all duration-200",
-        isDark ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"
-      )} />
-      <Moon className={cn(
-        "absolute h-4 w-4 text-blue-400 transition-all duration-200",
-        isDark ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"
-      )} />
+      {open && (
+        <div
+          className="absolute bottom-full mb-2 right-0 flex flex-col rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-xl shadow-black/5 overflow-hidden min-w-[120px]"
+          style={{ animation: 'nextdev-in 0.15s cubic-bezier(0.22,1,0.36,1)' }}
+        >
+          {([
+            { value: 'light' as const, icon: Sun, label: 'Light', active: !isDark && !isSystem },
+            { value: 'dark' as const, icon: Moon, label: 'Dark', active: isDark && !isSystem },
+            { value: 'system' as const, icon: Monitor, label: 'System', active: isSystem },
+          ]).map(({ value, icon: Icon, label, active }) => (
+            <button
+              key={value}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); setTheme(value); setOpen(false) }}
+              className={`flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors duration-100 ${active ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'}`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <button
+        onPointerDown={onPointerDown}
+        onClick={handleClick}
+        className="flex items-center justify-center h-10 w-10 rounded-full border border-border/60 bg-background/95 backdrop-blur-xl shadow-md shadow-black/5 hover:shadow-lg hover:border-border/80 active:scale-90 transition-all duration-200 cursor-grab active:cursor-grabbing"
+        aria-label="Toggle theme"
+      >
+        <Sun className={`h-4 w-4 text-amber-500 transition-all duration-300 ${isDark ? 'rotate-90 scale-0 absolute' : 'rotate-0 scale-100'}`} />
+        <Moon className={`h-4 w-4 text-blue-400 transition-all duration-300 ${isDark ? 'rotate-0 scale-100' : '-rotate-90 scale-0 absolute'}`} />
+      </button>
+
+      <style>{`
+        @keyframes nextdev-in {
+          from { opacity: 0; transform: translateY(6px) scale(0.96); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
     </div>
   )
-}
-
-function cn(...classes: (string | boolean | undefined | null)[]) {
-  return classes.filter(Boolean).join(' ')
 }

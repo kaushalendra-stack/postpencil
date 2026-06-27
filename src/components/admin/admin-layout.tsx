@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { AdminSidebar } from './admin-sidebar'
 import { Menu, Shield } from 'lucide-react'
 
@@ -13,12 +13,20 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { data: session, status } = useSession()
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMobileOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`)
+    } else if (status === 'authenticated' && session?.user?.role !== 'admin') {
+      router.replace('/')
+    }
+  }, [status, session, pathname, router])
 
   if (status === 'loading') {
     return (
@@ -28,17 +36,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     )
   }
 
-  if (!session) return null
-
-  const userRole = session.user.role
-  if (userRole !== 'admin') return null
+  if (!session || session.user.role !== 'admin') return null
 
   return (
     <div className="flex min-h-screen bg-background">
       <AdminSidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
 
       <div className="flex flex-1 flex-col min-w-0">
-        {/* Mobile Top Bar */}
         <header className="lg:hidden sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/80 backdrop-blur-xl px-4">
           <button
             onClick={() => setMobileOpen(true)}
@@ -54,7 +58,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </header>
 
-        {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>

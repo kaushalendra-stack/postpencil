@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Sidebar } from './sidebar'
 import { TopBar } from './topbar'
 import { MobileNav } from './mobile-nav'
 import { Footer } from './footer'
 
-const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password']
+const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password', '/logout']
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -20,14 +20,20 @@ interface MainLayoutProps {
 export function MainLayout({ children, title, showBack = false, hideTopBar = false }: MainLayoutProps) {
   const { data: session, status } = useSession()
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const isPublic = PUBLIC_ROUTES.some((route) => pathname.startsWith(route))
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMobileOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    if (status === 'unauthenticated' && !isPublic) {
+      router.replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`)
+    }
+  }, [status, isPublic, pathname, router])
 
   if (status === 'loading' && !isPublic) {
     return (
