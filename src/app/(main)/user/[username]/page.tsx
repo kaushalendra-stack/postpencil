@@ -37,7 +37,7 @@ export async function generateMetadata({
 
     const name = user.name || username
     const desc = user.bio || `${name}'s profile on PostPencil`
-    const keywords = [name, 'student', user.college, user.course].filter(Boolean)
+    const keywords = [name, 'student', user.college, user.course].filter((k): k is string => Boolean(k))
 
     return {
       ...siteMetadata(`${name} (@${username})`, desc),

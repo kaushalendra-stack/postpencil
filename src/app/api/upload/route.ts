@@ -7,6 +7,21 @@ import { randomUUID } from 'crypto';
 const PHP_UPLOAD_URL = process.env.NEXT_PUBLIC_UPLOAD_URL || 'https://postpencil.protoolvault.in';
 const UPLOAD_API_KEY = process.env.UPLOAD_API_KEY || '';
 
+const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/csv',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'application/zip',
+  'application/x-zip-compressed',
+];
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -25,6 +40,10 @@ export async function POST(request: NextRequest) {
     const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json({ error: 'File size exceeds 50MB limit' }, { status: 400 });
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: 'File type not allowed' }, { status: 400 });
     }
 
     // Upload to PHP server

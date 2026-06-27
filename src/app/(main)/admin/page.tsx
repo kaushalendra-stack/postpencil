@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
-import { MainLayout } from '@/components/layout/main-layout'
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth/config'
 import { AdminDashboard } from '@/components/admin/admin-dashboard'
 
 export const metadata: Metadata = {
@@ -10,10 +11,12 @@ export const metadata: Metadata = {
   },
 }
 
-export default function AdminPage() {
-  return (
-    <MainLayout title="Admin" showBack>
-      <AdminDashboard />
-    </MainLayout>
-  )
+export default async function AdminPage() {
+  const session = await auth()
+  const userRole = (session?.user as unknown as { role?: string })?.role
+  if (!session?.user || userRole !== 'admin') {
+    redirect('/home')
+  }
+
+  return <AdminDashboard />
 }

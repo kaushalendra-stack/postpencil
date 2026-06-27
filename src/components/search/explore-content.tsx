@@ -37,12 +37,12 @@ export function ExploreContent() {
 
   const { data: trendingPosts, isLoading: postsLoading } = useQuery({
     queryKey: ['explore', 'trending'],
-    queryFn: () => fetch('/api/explore/trending').then((res) => res.json()),
+    queryFn: () => fetch('/api/posts?feed=trending&limit=6').then((res) => res.json()),
   })
 
   const { data: trendingTags, isLoading: tagsLoading } = useQuery({
     queryKey: ['explore', 'tags'],
-    queryFn: () => fetch('/api/explore/tags').then((res) => res.json()),
+    queryFn: () => fetch('/api/tags?limit=20').then((res) => res.json()),
   })
 
   const handleSearch = (query: string) => {
@@ -73,7 +73,7 @@ export function ExploreContent() {
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {(trendingPosts ?? []).slice(0, 6).map((post: any) => (
+            {(trendingPosts?.data ?? []).slice(0, 6).map((post: any) => (
               <Link key={post.id} href={`/post/${post.id}`}>
                 <Card className="transition-colors hover:bg-muted/50">
                   <CardContent className="p-4">

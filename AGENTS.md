@@ -1,6 +1,6 @@
 # PostPencil — Complete Project Documentation
 
-> **Last Updated:** 2026-06-26
+> **Last Updated:** 2026-06-27
 > **Status:** Production-ready
 > **Stack:** Next.js 16 App Router + TypeScript + Tailwind CSS v4 + Drizzle ORM + MySQL + Auth.js
 
@@ -10,7 +10,7 @@
 
 PostPencil is an X/Twitter-style social learning platform where users share educational resources (PDFs, notes, presentations, assignments, question papers). Users can like, comment, bookmark, follow creators, and discover trending content.
 
-**Live URL:** http://localhost:3001 (dev) / https://postpencil.com (production)
+**Live URL:** http://localhost:3000 (dev) / https://postpencil.com (production)
 
 ---
 
@@ -18,7 +18,7 @@ PostPencil is an X/Twitter-style social learning platform where users share educ
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Next.js 15 App Router, TypeScript, Tailwind CSS |
+| Frontend | Next.js 16 App Router, TypeScript, Tailwind CSS |
 | UI Components | Custom shadcn/ui pattern (Radix UI primitives) |
 | State | TanStack Query + Zustand |
 | Backend | Next.js Route Handlers |
@@ -34,9 +34,10 @@ PostPencil is an X/Twitter-style social learning platform where users share educ
 
 ```
 src/
+├── middleware.ts                     # JWT auth + rate limiting + route protection
 ├── app/
 │   ├── layout.tsx                    # Root layout (Plus Jakarta Sans, JetBrains Mono)
-│   ├── page.tsx                      # Redirects to /home
+│   ├── page.tsx                      # Landing page for unauthenticated users
 │   ├── globals.css                   # Tailwind + theme vars + animations
 │   ├── not-found.tsx                 # 404 page with SVG illustration
 │   ├── error.tsx                     # Runtime error page
@@ -56,19 +57,31 @@ src/
 │   │   ├── login/page.tsx            # Login (email/username + OAuth)
 │   │   └── register/page.tsx         # Register with verification
 │   ├── (main)/
+│   │   ├── loading.tsx               # Skeleton loader for all routes
+│   │   ├── error.tsx                 # Error boundary with retry
+│   │   ├── not-found.tsx             # 404 within app shell
 │   │   ├── home/page.tsx             # Feed (latest/following/trending)
 │   │   ├── explore/page.tsx          # Explore (trending, tags, categories)
 │   │   ├── notifications/page.tsx    # Notifications list
 │   │   ├── bookmarks/page.tsx        # Bookmarks with collections
 │   │   ├── upload/page.tsx           # Upload resources
 │   │   ├── settings/page.tsx         # X-style settings (6 categories)
-│   │   ├── search/page.tsx           # Search results
-│   │   ├── admin/page.tsx            # Admin dashboard
+│   │   ├── search/page.tsx           # Search results with autocomplete
+│   │   ├── admin/
+│   │   │   ├── layout.tsx            # Admin layout (separate from main app)
+│   │   │   ├── page.tsx              # Admin dashboard (bento grid)
+│   │   │   ├── users/page.tsx        # User management (search, filter, ban/unban)
+│   │   │   ├── reports/page.tsx      # Report management (resolve/dismiss)
+│   │   │   ├── content/page.tsx      # Content management (posts grid)
+│   │   │   ├── analytics/page.tsx    # Platform analytics (stats, charts)
+│   │   │   ├── activity/page.tsx     # Activity feed (timeline)
+│   │   │   ├── messages/page.tsx     # Support tickets (reply system)
+│   │   │   └── settings/page.tsx     # Admin settings
 │   │   ├── help/page.tsx             # Help center + tickets
 │   │   ├── discuss/page.tsx          # Discussion feed
-│   │   ├── discuss/[discussionId]/   # Discussion detail
-│   │   ├── post/[postId]/page.tsx    # Post detail
-│   │   └── user/[username]/page.tsx  # User profile
+│   │   ├── discuss/[discussionId]/   # Discussion detail (server-rendered metadata)
+│   │   ├── post/[postId]/page.tsx    # Post detail with related posts
+│   │   └── user/[username]/page.tsx  # User profile with followers modal
 │   └── api/
 │       ├── auth/
 │       │   ├── [...nextauth]/route.ts      # Auth.js handlers
@@ -86,27 +99,34 @@ src/
 │       │   │   ├── comments/route.ts # GET/POST comments
 │       │   │   ├── bookmark/route.ts # Toggle bookmark
 │       │   │   ├── download/route.ts # Record download
-│       │   │   └── thread/route.ts   # Thread navigation
+│       │   │   ├── thread/route.ts   # Thread navigation
+│       │   │   └── related/route.ts  # Related posts by tags/subject
 │       ├── discussions/
 │       │   ├── route.ts              # GET/POST discussions
-│       │   ├── [id]/
-│       │   │   ├── route.ts          # GET/PATCH/DELETE discussion
-│       │   │   ├── like/route.ts     # Toggle like
-│       │   │   └── replies/route.ts  # GET/POST replies
+│       │   └── [id]/
+│       │       ├── route.ts          # GET/PATCH/DELETE discussion
+│       │       ├── like/route.ts     # Toggle like
+│       │       └── replies/route.ts  # GET/POST replies
 │       ├── users/
-│       │   ├── [username]/
-│       │   │   ├── route.ts          # GET/PATCH user profile
-│       │   │   ├── posts/route.ts    # GET user's posts
-│       │   │   └── follow/route.ts   # Toggle follow
-│       ├── search/route.ts           # Full-text search
+│       │   └── [username]/
+│       │       ├── route.ts          # GET/PATCH user profile
+│       │       ├── posts/route.ts    # GET user's posts
+│       │       ├── follow/route.ts   # Toggle follow
+│       │       └── followers/route.ts # GET followers/following list
+│       ├── search/
+│       │   ├── route.ts              # Full-text search
+│       │   └── autocomplete/route.ts # Autocomplete suggestions
 │       ├── notifications/route.ts    # GET/POST notifications
 │       ├── bookmarks/
 │       │   ├── route.ts              # GET bookmarks
 │       │   └── collections/route.ts  # GET/POST collections
 │       ├── tags/route.ts             # GET trending tags
-│       ├── upload/route.ts           # File upload to /uploads/
+│       ├── upload/route.ts           # File upload with server-side validation
 │       ├── reports/route.ts          # Create report
-│       ├── user-settings/route.ts    # GET/PATCH user preferences
+│       ├── user-settings/
+│       │   ├── route.ts              # GET/PATCH user preferences
+│       │   ├── profile/route.ts      # Update profile info
+│       │   └── password/route.ts     # Change password
 │       ├── sessions/route.ts         # GET sessions, heartbeat, revoke
 │       ├── tickets/route.ts          # GET/POST support tickets
 │       ├── email/test/route.ts       # Admin SMTP test
@@ -114,20 +134,20 @@ src/
 │           ├── route.ts              # Admin stats
 │           ├── reports/route.ts      # List reports
 │           ├── reports/[reportId]/   # Update report
-│           ├── users/route.ts        # List users
+│           ├── users/route.ts        # List users with pagination
 │           └── users/[userId]/ban/   # Ban user
 ├── components/
 │   ├── auth/auth-guard.tsx           # Redirects logged-in users from auth pages
 │   ├── layout/
 │   │   ├── sidebar.tsx               # Desktop sidebar (260px) + mobile overlay
 │   │   ├── topbar.tsx                # Sticky top bar with hamburger
-│   │   ├── mobile-nav.tsx            # Floating bottom nav
+│   │   ├── mobile-nav.tsx            # Floating bottom nav with notification badge
 │   │   ├── main-layout.tsx           # Shell layout with auth guard
 │   │   └── footer.tsx                # Minimal footer
 │   ├── post/
 │   │   ├── post-card.tsx             # Feed post card
 │   │   ├── post-detail.tsx           # Full post view
-│   │   ├── modern-post-detail.tsx    # Modern post detail with thread nav
+│   │   ├── modern-post-detail.tsx    # Modern post detail with thread nav + related posts
 │   │   └── thread-nav.tsx            # Thread navigation component
 │   ├── feed/
 │   │   ├── feed-list.tsx             # Infinite scroll feed
@@ -146,17 +166,20 @@ src/
 │   │   └── discussion-feed.tsx       # Discussion feed list
 │   ├── user/
 │   │   ├── profile-header.tsx        # Profile banner + stats
-│   │   ├── user-profile.tsx          # Full profile page
+│   │   ├── user-profile.tsx          # Full profile page with followers modal
 │   │   └── user-card.tsx             # Compact user card
 │   ├── upload/upload-form.tsx        # Drag & drop upload
 │   ├── search/
-│   │   ├── search-bar.tsx            # Search input
+│   │   ├── search-bar.tsx            # Search input with autocomplete + recent searches
 │   │   ├── search-results.tsx        # Tabbed results
 │   │   └── explore-content.tsx       # Explore page content
 │   ├── notifications/
 │   │   ├── notification-card.tsx     # Single notification
-│   │   └── notification-list.tsx     # Notification list
-│   ├── admin/admin-dashboard.tsx     # Admin stats + reports + users
+│   │   └── notification-list.tsx     # Notification list with query invalidation
+│   ├── admin/
+│   │   ├── admin-sidebar.tsx         # Admin-specific sidebar (theme compatible)
+│   │   ├── admin-layout.tsx          # Admin layout wrapper
+│   │   └── admin-dashboard.tsx       # Admin dashboard with bento grid
 │   ├── bookmarks/bookmark-collections.tsx
 │   ├── help/help-content.tsx         # FAQ + tickets + contact
 │   ├── settings/settings-form.tsx    # X-style settings (6 categories)
@@ -167,7 +190,7 @@ src/
 │       ├── skeleton.tsx, label.tsx, dropdown-menu.tsx
 │       ├── tooltip.tsx, scroll-area.tsx
 │       ├── animations.tsx, theme-toggle.tsx
-│       ├── floating-theme-toggle.tsx, animated-cursor.tsx
+│       └── floating-theme-toggle.tsx
 ├── lib/
 │   ├── db/
 │   │   ├── schema.ts                 # 20+ Drizzle tables + relations
@@ -179,8 +202,10 @@ src/
 │   ├── utils.ts                      # cn, formatNumber, formatDate, generateId, etc.
 │   ├── cache.ts                      # Caching utilities
 │   ├── seo.ts                        # SEO utilities and JSON-LD
+│   ├── rate-limit.ts                 # Sliding window rate limiter
+│   ├── rate-limit.ts                 # Sliding window rate limiter
 │   ├── types/index.ts                # TypeScript types
-│   └── validators.ts                 # Zod schemas
+│   └── validators.ts                 # Zod schemas (post, comment, profile, discussion, auth, ticket, report, settings)
 ├── hooks/
 │   ├── use-auth.ts                   # useRequireAuth
 │   ├── use-posts.ts                  # useFeed, useLikePost, useBookmarkPost
@@ -231,9 +256,11 @@ All tables use `varchar(36)` UUIDs as primary keys, MySQL `timestamp` for dates,
 - **reports** — targetType, targetId, reason, status
 - **recent_searches** — userId, query
 - **email_logs** — userId, to, subject, body, purpose, status
-- **login_sessions** — userId, provider, ip, device, browser, os, isCurrent, timestamps
 - **tickets** — userId, subject, category, message, status, adminReply
 - **user_settings** — userId (unique), 15 preference booleans, theme
+- **discussions** — id, userId, content, imageUrl, likesCount, repliesCount, viewsCount, timestamps
+- **discussion_likes** — userId + discussionId (unique)
+- **discussion_replies** — id, discussionId, userId, parentId, content, likesCount, timestamps
 
 ---
 
@@ -265,6 +292,28 @@ All tables use `varchar(36)` UUIDs as primary keys, MySQL `timestamp` for dates,
 
 ---
 
+## Middleware & Security
+
+### Route Protection (`src/middleware.ts`)
+- JWT-based authentication via `next-auth/jwt`
+- Protected routes: `/upload`, `/settings`, `/bookmarks`, `/notifications`, `/admin`
+- Protected API routes: POST endpoints, `/api/reports`, `/api/user-settings`, `/api/tickets`
+- Admin-only routes: `/admin`, `/api/admin/*`
+- Public routes: `/`, `/home`, `/explore`, `/search`, `/post/*`, `/user/*`, `/discuss/*`, auth pages, legal pages
+
+### Rate Limiting (`src/lib/rate-limit.ts`)
+- **Auth routes**: 10 requests per 15 minutes
+- **Upload routes**: 20 requests per hour
+- **API routes**: 60 requests per minute
+- Uses sliding window algorithm with in-memory store
+
+### Server-Side Validation
+- File uploads: MIME type whitelist enforced server-side
+- Profile images: Uploaded via `/api/upload` endpoint (no blob URLs)
+- Admin access: Server-side role check in page component + middleware
+
+---
+
 ## Key Design Decisions
 
 1. **Profile URLs use usernames** — `/user/[username]` not `/user/[id]`
@@ -276,7 +325,12 @@ All tables use `varchar(36)` UUIDs as primary keys, MySQL `timestamp` for dates,
 7. **Session tracking** — every login logged with device/browser/OS info
 8. **Email logging** — every email sent logged to `email_logs` table with purpose and body
 9. **Preferences saved to DB** — all notification/privacy/appearance toggles persist
-10. **Root page serves landing** — `/` shows landing page for unauthenticated users; authenticated users redirect to `/home` via client-side useEffect
+10. **Root page serves landing** — `/` shows landing page for unauthenticated users; authenticated users redirect to `/home`
+11. **Drizzle queries use `db.select().from()`** — standardized across all API routes for consistency
+12. **Admin panel has dedicated layout** — separate sidebar, dark/light theme, different navigation
+13. **Rate limiting via middleware** — sliding window for auth, upload, and general API routes
+14. **Autocomplete in search** — debounced suggestions with recent searches stored in localStorage
+15. **Related posts** — shown at bottom of post detail, matched by tags/subject/course
 
 ---
 
@@ -285,7 +339,7 @@ All tables use `varchar(36)` UUIDs as primary keys, MySQL `timestamp` for dates,
 ```env
 DATABASE_HOST="srv665.hstgr.io"
 DATABASE_USER="u687264317_postpencil"
-DATABASE_PASSWORD="B9&s9Ffdu3X"
+DATABASE_PASSWORD="..."
 DATABASE_NAME="u687264317_postpencil"
 AUTH_SECRET="..."
 GOOGLE_CLIENT_ID="..."
@@ -310,7 +364,7 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 npm run dev          # Start dev server on port 3000
 
 # Build
-npx next build       # Production build (uses --ignoreBuildErrors for TS)
+npx next build       # Production build (uses ignoreBuildErrors for TS)
 
 # Database
 npx drizzle-kit push # Push schema changes to MySQL
@@ -324,30 +378,21 @@ npm run lint
 
 ## Known Issues & TODOs
 
-1. TypeScript type checking is disabled in build (`ignoreBuildErrors: true`) due to subagent-generated code inconsistencies
-2. Some API routes use `db.query.tableName.findFirst()` (Drizzle relational query API) while others use `db.select().from()` — should be unified
-3. The `verification_tokens` table uses DrizzleAdapter's default schema which may conflict with custom columns
-4. No rate limiting middleware implemented yet
-5. No CSRF protection middleware
-6. File upload uses local filesystem — should be migrated to cloud storage
-7. No image optimization for uploaded files
-8. No pagination for admin lists
-9. No real-time notifications (WebSocket/SSE)
-10. No search indexing (Meilisearch/Algolia)
+1. TypeScript type checking is temporarily disabled in build (`ignoreBuildErrors: true`) due to pre-existing type errors that need incremental fixing
+2. File upload uses PHP server — should be migrated to cloud storage (S3/R2) for Vercel compatibility
+3. No image optimization for uploaded files — should generate thumbnails and serve WebP variants
+4. No real-time notifications (WebSocket/SSE) — currently uses 60s polling
+5. No search indexing (Meilisearch/Algolia) — uses MySQL LIKE queries
+6. Middleware is deprecated in Next.js 16 — should migrate to `proxy` convention when stable
 
 ---
 
 ## File Upload System
 
-Files are uploaded to `/public/uploads/` with UUID naming:
-```
-/uploads/
-├── pdfs/      # .pdf
-├── images/    # .jpg, .png, .webp
-├── docs/      # .doc, .docx
-├── ppts/      # .ppt, .pptx
-└── zips/      # .zip
-```
+Files are uploaded to PHP server at `postpencil.protoolvault.in`:
+- Client-side: `react-dropzone` with 50MB limit
+- Server-side: MIME type whitelist validation
+- Database: `files` table stores metadata (fileName, originalName, fileUrl, fileSize, mimeType, fileType)
 
 ---
 

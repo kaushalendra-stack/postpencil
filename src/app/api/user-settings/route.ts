@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
 import { userSettings } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { generateId } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
@@ -12,9 +12,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const settings = await db.query.userSettings.findFirst({
-      where: eq(userSettings.userId, session.user.id),
-    });
+    const [settings] = await db
+      .select()
+      .from(userSettings)
+      .where(eq(userSettings.userId, session.user.id))
+      .limit(1);
 
     if (!settings) {
       const defaultSettings = {
@@ -22,9 +24,11 @@ export async function GET(request: NextRequest) {
         userId: session.user.id,
       };
       await db.insert(userSettings).values(defaultSettings);
-      const newSettings = await db.query.userSettings.findFirst({
-        where: eq(userSettings.userId, session.user.id),
-      });
+      const [newSettings] = await db
+        .select()
+        .from(userSettings)
+        .where(eq(userSettings.userId, session.user.id))
+        .limit(1);
       return NextResponse.json(newSettings, { status: 200 });
     }
 
@@ -61,9 +65,11 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
-    const existing = await db.query.userSettings.findFirst({
-      where: eq(userSettings.userId, session.user.id),
-    });
+    const [existing] = await db
+      .select({ id: userSettings.id })
+      .from(userSettings)
+      .where(eq(userSettings.userId, session.user.id))
+      .limit(1);
 
     if (!existing) {
       await db.insert(userSettings).values({

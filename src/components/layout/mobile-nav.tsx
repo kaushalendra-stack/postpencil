@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Home', href: '/home', icon: Home },
   { label: 'Explore', href: '/explore', icon: Compass },
   { label: 'Discuss', href: '/discuss', icon: MessageSquare },
+  { label: 'Alerts', href: '/notifications', icon: Bell },
   { label: 'Saved', href: '/bookmarks', icon: Bookmark },
 ]
 

@@ -2,19 +2,90 @@
 
 import { useState, useRef } from 'react'
 import Link from 'next/link'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { useParams } from 'next/navigation'
-import { Heart, Camera, GraduationCap, BookOpen, ExternalLink, Settings } from 'lucide-react'
+import { Heart, Camera, GraduationCap, BookOpen, ExternalLink, Settings, Users } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PostCard } from '@/components/post/post-card'
 import { PostCardSkeleton } from '@/components/feed/post-card-skeleton'
 import { useUser, useUserPosts, useFollowUser } from '@/hooks/use-user'
 import { formatNumber, cn } from '@/lib/utils'
 import type { PostWithUser } from '@/lib/types'
+
+interface FollowerUser {
+  id: string
+  name: string | null
+  username: string
+  image: string | null
+  bio: string | null
+  followersCount: number
+  postsCount: number
+}
+
+function FollowersModal({ open, onOpenChange, username, type }: { open: boolean; onOpenChange: (v: boolean) => void; username: string; type: 'followers' | 'following' }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['followers', username, type],
+    queryFn: () => fetch(`/api/users/${username}/followers?type=${type}`).then((r) => r.json()),
+    enabled: open,
+  })
+
+  const users: FollowerUser[] = data?.data ?? []
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[400px] max-h-[80vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-2">
+          <DialogTitle className="text-base">{type === 'followers' ? 'Followers' : 'Following'}</DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 animate-pulse">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : users.length === 0 ? (
+            <div className="py-10 text-center">
+              <Users className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No {type} yet</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {users.map((user) => (
+                <Link
+                  key={user.id}
+                  href={`/user/${user.username}`}
+                  onClick={() => onOpenChange(false)}
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors"
+                >
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={user.image ?? undefined} />
+                    <AvatarFallback className="text-xs">{user.name?.charAt(0)?.toUpperCase() ?? 'U'}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{user.name || 'Anonymous'}</p>
+                    <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 export function UserProfile() {
   const { username } = useParams() as { username: string }
@@ -29,6 +100,7 @@ export function UserProfile() {
   const avatarRef = useRef<HTMLInputElement>(null)
   const [bannerPreview, setBannerPreview] = useState(user?.banner || '')
   const [avatarPreview, setAvatarPreview] = useState(user?.image || '')
+  const [followersModal, setFollowersModal] = useState<{ open: boolean; type: 'followers' | 'following' }>({ open: false, type: 'followers' })
 
   const uploadMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -40,20 +112,37 @@ export function UserProfile() {
     onError: () => toast.error('Failed to update'),
   })
 
-  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const url = URL.createObjectURL(file)
-    setBannerPreview(url)
-    uploadMutation.mutate({ banner: url })
+  const uploadFile = async (file: File): Promise<string | null> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      if (!res.ok) return null
+      const data = await res.json()
+      return data.fileUrl || null
+    } catch {
+      return null
+    }
   }
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const url = URL.createObjectURL(file)
-    setAvatarPreview(url)
-    uploadMutation.mutate({ image: url })
+    const url = await uploadFile(file)
+    if (url) {
+      setBannerPreview(url)
+      uploadMutation.mutate({ banner: url })
+    }
+  }
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const url = await uploadFile(file)
+    if (url) {
+      setAvatarPreview(url)
+      uploadMutation.mutate({ image: url })
+    }
   }
 
   const isOwnProfile = session?.user?.id === user?.id
@@ -222,14 +311,20 @@ export function UserProfile() {
             <span className="font-semibold">{formatNumber(user.postsCount)}</span>{' '}
             <span className="text-muted-foreground">posts</span>
           </span>
-          <span>
+          <button
+            onClick={() => setFollowersModal({ open: true, type: 'followers' })}
+            className="hover:underline"
+          >
             <span className="font-semibold">{formatNumber(user.followersCount)}</span>{' '}
             <span className="text-muted-foreground">followers</span>
-          </span>
-          <span>
+          </button>
+          <button
+            onClick={() => setFollowersModal({ open: true, type: 'following' })}
+            className="hover:underline"
+          >
             <span className="font-semibold">{formatNumber(user.followingCount)}</span>{' '}
             <span className="text-muted-foreground">following</span>
-          </span>
+          </button>
         </div>
       </div>
 
@@ -289,6 +384,13 @@ export function UserProfile() {
           </div>
         </div>
       </div>
+
+      <FollowersModal
+        open={followersModal.open}
+        onOpenChange={(open) => setFollowersModal({ ...followersModal, open })}
+        username={username}
+        type={followersModal.type}
+      />
     </div>
   )
 }

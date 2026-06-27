@@ -11,32 +11,33 @@ export async function GET(
   try {
     const { username } = await params;
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.username, username),
-      columns: {
-        id: true,
-        name: true,
-        username: true,
-        email: true,
-        image: true,
-        banner: true,
-        bio: true,
-        college: true,
-        course: true,
-        semester: true,
-        twitterUrl: true,
-        githubUrl: true,
-        linkedinUrl: true,
-        websiteUrl: true,
-        role: true,
-        isPrivate: true,
-        isBanned: true,
-        followersCount: true,
-        followingCount: true,
-        postsCount: true,
-        createdAt: true,
-      },
-    });
+    const [user] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        email: users.email,
+        image: users.image,
+        banner: users.banner,
+        bio: users.bio,
+        college: users.college,
+        course: users.course,
+        semester: users.semester,
+        twitterUrl: users.twitterUrl,
+        githubUrl: users.githubUrl,
+        linkedinUrl: users.linkedinUrl,
+        websiteUrl: users.websiteUrl,
+        role: users.role,
+        isPrivate: users.isPrivate,
+        isBanned: users.isBanned,
+        followersCount: users.followersCount,
+        followingCount: users.followingCount,
+        postsCount: users.postsCount,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.username, username))
+      .limit(1);
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -69,9 +70,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.username, username),
-    });
+    const [user] = await db
+      .select({ id: users.id, role: users.role })
+      .from(users)
+      .where(eq(users.username, username))
+      .limit(1);
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

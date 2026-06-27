@@ -8,7 +8,7 @@ import { useTheme } from 'next-themes'
 import {
   Home, Compass, Bell, Bookmark, Settings, HelpCircle,
   Sun, Moon, LogOut, ChevronDown, X, Upload,
-  User, MessageSquare,
+  User, MessageSquare, Shield,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -83,7 +83,21 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           <User className="h-[22px] w-[22px] shrink-0" strokeWidth={pathname === `/user/${(session?.user as any)?.username}` ? 2.2 : 1.8} />
           <span className="text-[15px]">Profile</span>
         </Link>
-
+        {(session?.user as any)?.role === 'admin' && (
+          <Link
+            href="/admin"
+            onClick={onMobileClose}
+            className={cn(
+              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
+              pathname === '/admin' || pathname.startsWith('/admin/')
+                ? 'bg-orange-500/10 text-orange-500 font-semibold'
+                : 'text-orange-500/70 hover:bg-orange-500/10 hover:text-orange-500'
+            )}
+          >
+            <Shield className="h-5 w-5 shrink-0" strokeWidth={pathname.startsWith('/admin') ? 2.2 : 1.8} />
+            Admin Panel
+          </Link>
+        )}
         <div>
           <button
             onClick={() => setSupportOpen(!supportOpen)}

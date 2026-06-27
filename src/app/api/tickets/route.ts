@@ -80,3 +80,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const isAdmin = (session.user as any).role === 'admin';
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { id, adminReply, status } = await request.json();
+
+    if (!id) {
+      return NextResponse.json({ error: 'Ticket ID is required' }, { status: 400 });
+    }
+
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (adminReply) updates.adminReply = adminReply;
+    if (status) updates.status = status;
+
+    await db.update(tickets).set(updates).where(eq(tickets.id, id));
+
+    return NextResponse.json({ message: 'Ticket updated' }, { status: 200 });
+  } catch (error) {
+    console.error('Update ticket error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -15,9 +15,11 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.username, username),
-    });
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.username, username))
+      .limit(1);
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -59,9 +61,10 @@ export async function GET(
     const postIds = data.map((p) => p.id);
 
     const postFiles = postIds.length
-      ? await db.query.files.findMany({
-          where: sql`${files.postId} IN (${sql.join(postIds.map((id) => sql`${id}`), sql`, `)})`,
-        })
+      ? await db
+          .select()
+          .from(files)
+          .where(sql`${files.postId} IN (${sql.join(postIds.map((id) => sql`${id}`), sql`, `)})`)
       : [];
 
     const postTagsData = postIds.length

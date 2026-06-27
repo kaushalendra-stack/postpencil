@@ -207,7 +207,9 @@ export function ModernPostDetail() {
                   {pf.fileType.toUpperCase()} · {formatFileSize(pf.fileSize)}
                 </p>
               </div>
-              <Button asChild className="rounded-xl px-5">
+              <Button asChild className="rounded-xl px-5" onClick={() => {
+                fetch(`/api/posts/${post.id}/download`, { method: 'POST' }).catch(() => {})
+              }}>
                 <a href={pf.fileUrl} download>
                   <Download className="h-4 w-4 mr-2" />
                   Download
@@ -280,6 +282,48 @@ export function ModernPostDetail() {
         <div className="border-t border-border/30 pt-6">
           <ModernCommentSection postId={post.id} />
         </div>
+
+        {/* Related Posts */}
+        <RelatedPosts postId={post.id} />
+      </div>
+    </div>
+  )
+}
+
+function RelatedPosts({ postId }: { postId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['related-posts', postId],
+    queryFn: () => fetch(`/api/posts/${postId}/related`).then((r) => r.json()),
+    enabled: !!postId,
+  })
+
+  const related = data?.data ?? []
+
+  if (isLoading || related.length === 0) return null
+
+  return (
+    <div className="border-t border-border/30 pt-6 mt-6">
+      <h3 className="text-sm font-bold mb-4">Related Resources</h3>
+      <div className="space-y-3">
+        {related.map((post: any) => (
+          <Link
+            key={post.id}
+            href={`/post/${post.id}`}
+            className="block rounded-xl border border-border/30 bg-card/30 p-4 hover:border-border/60 hover:bg-card/60 transition-all"
+          >
+            <p className="text-sm font-semibold line-clamp-1">{post.title}</p>
+            {post.description && (
+              <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{post.description}</p>
+            )}
+            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground/50">
+              <span>{post.user?.username}</span>
+              <span>&middot;</span>
+              <span>{formatNumber(post.likesCount)} likes</span>
+              <span>&middot;</span>
+              <span>{formatNumber(post.viewsCount)} views</span>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   )

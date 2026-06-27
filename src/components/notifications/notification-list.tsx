@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Heart,
   MessageCircle,
@@ -91,6 +92,7 @@ function NotificationItem({ notification }: { notification: NotificationItem }) 
 
 export function NotificationList() {
   const { data, isLoading } = useNotifications()
+  const queryClient = useQueryClient()
 
   const notifications: NotificationItem[] = Array.isArray(data)
     ? data
@@ -103,7 +105,7 @@ export function NotificationList() {
   const handleMarkAllRead = async () => {
     try {
       await fetch('/api/notifications', { method: 'POST' })
-      window.location.reload()
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
     } catch {}
   }
 

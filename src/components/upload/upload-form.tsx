@@ -194,7 +194,7 @@ export function UploadForm() {
       toast.success(`Part ${threadOrder + 2} added!`)
     } else {
       toast.success('Resource published!')
-      router.push('/')
+      router.push(`/post/${postId}`)
     }
   }
 

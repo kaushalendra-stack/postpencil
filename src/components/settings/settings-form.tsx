@@ -173,6 +173,7 @@ function AccountSettings() {
   const [newPassword, setNewPassword] = useState('')
   const [showCurrentPw, setShowCurrentPw] = useState(false)
   const [showNewPw, setShowNewPw] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const saveMutation = useMutation({
     mutationFn: (data: any) => fetch('/api/user-settings/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()),
@@ -219,7 +220,24 @@ function AccountSettings() {
       </Section>
       <Section title="Danger Zone">
         <p className="text-sm text-muted-foreground mb-3">Once you delete your account, there is no going back.</p>
-        <Button variant="destructive" size="sm" className="rounded-xl">Delete Account</Button>
+        {!showDeleteConfirm ? (
+          <Button variant="destructive" size="sm" className="rounded-xl" onClick={() => setShowDeleteConfirm(true)}>
+            Delete Account
+          </Button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-destructive font-medium">Are you sure? This cannot be undone.</p>
+            <Button variant="destructive" size="sm" className="rounded-xl" onClick={() => {
+              toast.error('Account deletion is not yet implemented')
+              setShowDeleteConfirm(false)
+            }}>
+              Confirm Delete
+            </Button>
+            <Button variant="ghost" size="sm" className="rounded-xl" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+          </div>
+        )}
       </Section>
     </div>
   )

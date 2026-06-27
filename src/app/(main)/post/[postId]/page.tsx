@@ -1,4 +1,4 @@
-import { Metadata, unstable_cache } from 'next'
+import { Metadata } from 'next'
 import { db } from '@/lib/db'
 import { posts, users } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
@@ -39,7 +39,7 @@ export async function generateMetadata({
     const p = post[0]
     const title = p.title || 'Educational Resource'
     const desc = p.description || `${title} — shared on PostPencil`
-    const keywords = [p.subject, p.course, 'notes', 'educational resources'].filter(Boolean)
+    const keywords = [p.subject, p.course, 'notes', 'educational resources'].filter((k): k is string => Boolean(k))
 
     return {
       ...siteMetadata(title, desc),
