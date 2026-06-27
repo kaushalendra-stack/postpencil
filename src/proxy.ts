@@ -1,61 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getToken } from 'next-auth/jwt'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
-
-const PUBLIC_PAGE_ROUTES = new Set([
-  '/',
-  '/home',
-  '/explore',
-  '/search',
-  '/login',
-  '/register',
-  '/logout',
-  '/verify-email',
-  '/pending-verification',
-  '/forgot-password',
-  '/reset-password',
-  '/privacy',
-  '/terms',
-  '/cookies',
-  '/guidelines',
-  '/help',
-  '/discuss',
-])
-
-const PUBLIC_GET_API_ROUTES = new Set([
-  '/api/posts',
-  '/api/tags',
-  '/api/search',
-  '/api/discussions',
-])
-
-const AUTH_POST_ROUTES = [
-  '/api/auth/register',
-  '/api/auth/verify-email',
-  '/api/auth/resend-verification',
-  '/api/auth/forgot-password',
-  '/api/auth/reset-password',
-  '/api/auth/check-verification',
-  '/api/auth/callback',
-  '/api/auth/signout',
-  '/api/auth/signin',
-]
-
-const AUTH_PUBLIC_ROUTES = [
-  '/api/auth/session',
-  '/api/auth/csrf',
-  '/api/auth/providers',
-  '/api/auth/signin',
-  '/api/auth/signout',
-  '/api/auth/callback',
-]
-
-function isPublicPage(pathname: string): boolean {
-  if (PUBLIC_PAGE_ROUTES.has(pathname)) return true
-  if (pathname.startsWith('/post/') || pathname.startsWith('/user/') || pathname.startsWith('/discuss/')) return true
-  return false
-}
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -64,17 +9,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  })
-
   if (pathname.startsWith('/api/')) {
     const ip = getClientIp(request)
 
-    const isAuthInternal = request.method === 'GET' && AUTH_PUBLIC_ROUTES.some((r) => pathname.startsWith(r))
-
-    if (pathname.startsWith('/api/auth/') && !isAuthInternal) {
+    if (pathname.startsWith('/api/auth/')) {
       const { allowed, resetTime } = checkRateLimit(`auth:${ip}`, { windowMs: 15 * 60 * 1000, maxRequests: 10 })
       if (!allowed) {
         return NextResponse.json({ error: 'Too many requests' }, {
@@ -92,42 +30,6 @@ export async function proxy(request: NextRequest) {
       if (!allowed) {
         return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
       }
-    }
-
-    if (request.method === 'POST' && AUTH_POST_ROUTES.some((r) => pathname.startsWith(r))) {
-      return NextResponse.next()
-    }
-
-    if (request.method === 'GET' && AUTH_PUBLIC_ROUTES.some((r) => pathname.startsWith(r))) {
-      return NextResponse.next()
-    }
-
-    if (request.method === 'GET') {
-      if (PUBLIC_GET_API_ROUTES.has(pathname) || pathname.startsWith('/api/posts/') || pathname.startsWith('/api/tags') || pathname.startsWith('/api/search') || pathname.startsWith('/api/users/') || pathname.startsWith('/api/discussions/')) {
-        return NextResponse.next()
-      }
-    }
-
-    return NextResponse.next()
-  }
-
-  if (isPublicPage(pathname)) {
-    if (token && (pathname === '/login' || pathname === '/register')) {
-      return NextResponse.redirect(new URL('/home', request.url))
-    }
-    return NextResponse.next()
-  }
-
-  if (!token) {
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('callbackUrl', pathname)
-    return NextResponse.redirect(loginUrl)
-  }
-
-  if (pathname.startsWith('/admin')) {
-    const tokenRole = (token as unknown as { role?: string })?.role
-    if (tokenRole !== 'admin') {
-      return NextResponse.redirect(new URL('/home', request.url))
     }
   }
 
