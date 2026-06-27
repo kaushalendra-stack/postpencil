@@ -9,6 +9,21 @@ export const metadata: Metadata = {
     index: false,
     follow: true,
   },
+  openGraph: {
+    title: 'Notifications | PostPencil',
+    description: 'View your latest notifications on PostPencil.',
+    url: 'https://postpencil.com/notifications',
+    siteName: 'PostPencil',
+    images: [{ url: 'https://postpencil.com/og.png', width: 1200, height: 630, alt: 'PostPencil' }],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Notifications | PostPencil',
+    description: 'View your latest notifications on PostPencil.',
+    images: ['https://postpencil.com/og.png'],
+  },
 }
 
 export default function NotificationsPage() {

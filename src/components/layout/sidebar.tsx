@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { useTheme } from 'next-themes'
 import {
   Home, Compass, Bell, Bookmark, Settings, HelpCircle,
@@ -172,12 +172,9 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
               <p className="font-semibold text-sm truncate">{session.user.name}</p>
               <p className="text-xs text-muted-foreground truncate">@{(session.user as any).username || 'user'}</p>
             </div>
-            <LogOut className="h-4 w-4 text-muted-foreground shrink-0 xl:block" 
-            onClick={async () => {
-              onMobileClose()
-              signOut({ callbackUrl: '/login' })
-            }}
-          />
+            <Link href="/logout" onClick={onMobileClose}>
+              <LogOut className="h-4 w-4 text-muted-foreground shrink-0 xl:block" />
+            </Link>
           </div>
         )}
       </div>

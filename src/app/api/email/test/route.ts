@@ -15,6 +15,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Recipient email is required' }, { status: 400 });
     }
 
+    if (typeof to !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
     const result = await sendEmail({
       to,
       type: 'test',

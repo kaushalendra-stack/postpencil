@@ -5,6 +5,7 @@ import { AdminDashboard } from '@/components/admin/admin-dashboard'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard',
+  description: 'PostPencil platform administration dashboard with user and content management.',
   robots: {
     index: false,
     follow: false,

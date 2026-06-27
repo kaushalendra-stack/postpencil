@@ -91,10 +91,21 @@ export async function PATCH(
       'image', 'banner', 'isPrivate',
     ];
 
+    const MAX_LENGTHS: Record<string, number> = {
+      name: 100, bio: 300, college: 200, course: 100, semester: 20,
+      twitterUrl: 500, githubUrl: 500, linkedinUrl: 500, websiteUrl: 500,
+      image: 500, banner: 500,
+    };
+
     const updates: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (field in body) {
-        updates[field] = body[field];
+        const value = body[field];
+        const maxLen = MAX_LENGTHS[field];
+        if (maxLen && typeof value === 'string' && value.length > maxLen) {
+          return NextResponse.json({ error: `${field} must be ${maxLen} characters or less` }, { status: 400 });
+        }
+        updates[field] = value;
       }
     }
 

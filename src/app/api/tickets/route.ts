@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth/config';
 import { tickets, users } from '@/lib/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { generateId } from '@/lib/utils';
+import { ticketSchema } from '@/lib/validators';
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,15 +55,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { subject, category, message, priority } = await request.json();
+    const body = await request.json();
+    const parsed = ticketSchema.safeParse(body);
 
-    if (!subject || !category || !message) {
-      return NextResponse.json({ error: 'Subject, category, and message are required' }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0]?.message || 'Invalid input' }, { status: 400 });
     }
 
-    if (!['bug', 'feature', 'account', 'content', 'general'].includes(category)) {
-      return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
-    }
+    const { subject, category, message, priority } = parsed.data;
 
     const id = generateId();
     await db.insert(tickets).values({

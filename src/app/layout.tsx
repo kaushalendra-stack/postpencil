@@ -31,6 +31,9 @@ export const metadata: Metadata = {
     "presentations",
     "question papers",
   ],
+  alternates: {
+    canonical: "https://postpencil.com",
+  },
   authors: [{ name: "PostPencil" }],
   creator: "PostPencil",
   metadataBase: new URL("https://postpencil.com"),

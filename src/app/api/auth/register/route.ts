@@ -5,15 +5,18 @@ import { eq, or } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import { sendEmail } from '@/lib/email';
+import { registerSchema } from '@/lib/validators';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, username, email, password } = body;
+    const parsed = registerSchema.safeParse(body);
 
-    if (!name || !username || !email || !password) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0]?.message || 'Invalid input' }, { status: 400 });
     }
+
+    const { name, username, email, password } = parsed.data;
 
     if (password.length < 8) {
       return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
@@ -33,10 +36,6 @@ export async function POST(request: NextRequest) {
 
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
       return NextResponse.json({ error: 'Password must contain at least one special character' }, { status: 400 });
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      return NextResponse.json({ error: 'Username can only contain letters, numbers, and underscores' }, { status: 400 });
     }
 
     const existingUser = await db.query.users.findFirst({

@@ -55,6 +55,16 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Session token required' }, { status: 400 })
     }
 
+    const [targetSession] = await db
+      .select({ userId: sessions.userId })
+      .from(sessions)
+      .where(eq(sessions.sessionToken, sessionToken))
+      .limit(1)
+
+    if (!targetSession || targetSession.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+    }
+
     await db
       .delete(sessions)
       .where(eq(sessions.sessionToken, sessionToken))

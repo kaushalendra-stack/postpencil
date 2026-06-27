@@ -51,7 +51,8 @@ export function getApiRateLimit(ip: string) {
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
-    return forwarded.split(',')[0].trim()
+    const parts = forwarded.split(',').map((p) => p.trim())
+    return parts[parts.length - 1] || '127.0.0.1'
   }
   return '127.0.0.1'
 }

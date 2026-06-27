@@ -17,7 +17,12 @@ export async function POST(
     }
 
     const userId = session.user.id;
-    const { collectionId } = await request.json().catch(() => ({}));
+    const body = await request.json().catch(() => ({}));
+    const collectionId = body.collectionId;
+
+    if (collectionId && (typeof collectionId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(collectionId))) {
+      return NextResponse.json({ error: 'Invalid collection ID format' }, { status: 400 });
+    }
 
     const existingBookmark = await db.query.bookmarks.findFirst({
       where: and(eq(bookmarks.userId, userId), eq(bookmarks.postId, postId)),

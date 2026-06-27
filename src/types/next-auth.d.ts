@@ -17,3 +17,11 @@ declare module "next-auth/jwt" {
     provider?: string;
   }
 }
+
+interface Window {
+  turnstile?: {
+    render: (container: HTMLElement | string, options: Record<string, unknown>) => string
+    remove: (widgetId: string) => void
+    reset: (widgetId: string) => void
+  }
+}

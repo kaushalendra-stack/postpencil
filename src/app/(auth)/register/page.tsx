@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { FadeIn } from '@/components/ui/animations'
+import { Captcha, verifyCaptcha } from '@/components/auth/captcha'
 
 function BrandPanel() {
   return (
@@ -43,6 +44,7 @@ export default function RegisterPage() {
   const [registeredEmail, setRegisteredEmail] = useState('')
   const [resendCooldown, setResendCooldown] = useState(30)
   const [resending, setResending] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -68,6 +70,15 @@ export default function RegisterPage() {
     if (!/[a-z]/.test(password)) { setError('Password must contain at least one lowercase letter'); return }
     if (!/[0-9]/.test(password)) { setError('Password must contain at least one number'); return }
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) { setError('Password must contain at least one special character'); return }
+
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+      const valid = await verifyCaptcha(captchaToken)
+      if (!valid) {
+        setError('CAPTCHA verification failed. Please try again.')
+        return
+      }
+    }
+
     setLoading(true)
     try {
       const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, username, email, password }) })
@@ -149,6 +160,13 @@ export default function RegisterPage() {
               </div>
             </FadeIn>
             <FadeIn delay={0.45}><div className="space-y-1.5"><Label className="text-sm font-medium">Confirm password</Label><Input type="password" placeholder="Confirm your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="h-11 rounded-xl bg-muted/30" /></div></FadeIn>
+            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+              <FadeIn delay={0.47}>
+                <div className="flex justify-center">
+                  <Captcha onVerify={setCaptchaToken} action="register" />
+                </div>
+              </FadeIn>
+            )}
             <FadeIn delay={0.5}><Button type="submit" className="w-full h-11 rounded-xl font-medium text-sm bg-foreground text-background hover:bg-foreground/90 active:scale-[0.98] transition-all" disabled={loading}>{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span>Create account</span><ArrowRight className="h-4 w-4 ml-1" /></>}</Button></FadeIn>
           </form>
           <FadeIn delay={0.55}><p className="text-center text-sm text-muted-foreground mt-6">Already have an account? <Link href="/login" className="font-medium text-foreground hover:underline underline-offset-4">Sign in</Link></p></FadeIn>

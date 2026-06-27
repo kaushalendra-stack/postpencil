@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
 import { posts, users, files, postTags, tags, likes, bookmarks } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 
 export async function GET(
   request: NextRequest,
@@ -74,14 +74,14 @@ export async function GET(
 
     if (userId) {
       const userLike = await db.query.likes.findFirst({
-        where: eq(likes.userId, userId),
+        where: and(eq(likes.userId, userId), eq(likes.postId, postId)),
       });
-      isLiked = !!userLike && userLike.postId === postId;
+      isLiked = !!userLike;
 
       const userBookmark = await db.query.bookmarks.findFirst({
-        where: eq(bookmarks.userId, userId),
+        where: and(eq(bookmarks.userId, userId), eq(bookmarks.postId, postId)),
       });
-      isBookmarked = !!userBookmark && userBookmark.postId === postId;
+      isBookmarked = !!userBookmark;
     }
 
     const result = {

@@ -141,12 +141,13 @@ export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
               <p className="font-medium text-sm truncate">{session.user.name}</p>
               <p className="text-xs text-muted-foreground truncate">@{(session.user as any).username || 'user'}</p>
             </div>
-            <button
-              onClick={() => { onMobileClose(); signOut({ callbackUrl: '/login' }) }}
+            <Link
+              href="/logout"
+              onClick={onMobileClose}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <LogOut className="h-4 w-4" />
-            </button>
+            </Link>
           </div>
         )}
       </div>

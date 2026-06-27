@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth/config';
 import { discussions, users, discussionLikes } from '@/lib/db/schema';
 import { eq, and, sql, desc, count } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
+import { discussionSchema } from '@/lib/validators';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,11 +13,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { content, imageUrl } = await request.json();
+    const body = await request.json();
+    const parsed = discussionSchema.safeParse(body);
 
-    if (!content?.trim()) {
-      return NextResponse.json({ error: 'Content is required' }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0]?.message || 'Invalid input' }, { status: 400 });
     }
+
+    const { content, imageUrl } = parsed.data;
 
     const discussionId = randomUUID();
 

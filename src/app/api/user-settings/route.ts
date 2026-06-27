@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth/config';
 import { userSettings } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateId } from '@/lib/utils';
+import { settingsSchema } from '@/lib/validators';
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,23 +48,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const allowedFields = [
-      'emailNotifications', 'pushNotifications', 'likeNotifications',
-      'commentNotifications', 'followNotifications', 'downloadNotifications',
-      'isPrivate', 'showEmail', 'showFollowers', 'allowComments',
-      'appearInSearch', 'theme', 'compactMode',
-    ];
+    const parsed = settingsSchema.partial().safeParse(body);
 
-    const updates: Record<string, unknown> = {};
-    for (const field of allowedFields) {
-      if (field in body) {
-        updates[field] = body[field];
-      }
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid settings data', details: parsed.error.flatten() }, { status: 400 });
     }
 
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
-    }
+    const updates: Record<string, unknown> = parsed.data;
 
     const [existing] = await db
       .select({ id: userSettings.id })

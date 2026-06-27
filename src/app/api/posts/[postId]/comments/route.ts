@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth/config';
 import { comments, users, posts, notifications } from '@/lib/db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { generateId } from '@/lib/utils';
+import { commentSchema } from '@/lib/validators';
 
 export async function GET(
   request: NextRequest,
@@ -73,11 +74,14 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { content, parentId } = await request.json();
+    const body = await request.json();
+    const parsed = commentSchema.safeParse(body);
 
-    if (!content || !content.trim()) {
-      return NextResponse.json({ error: 'Comment content is required' }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0]?.message || 'Invalid input' }, { status: 400 });
     }
+
+    const { content, parentId } = parsed.data;
 
     const commentId = generateId();
 

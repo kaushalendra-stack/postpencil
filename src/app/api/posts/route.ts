@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth/config';
 import { posts, users, files, postTags, tags, likes, bookmarks } from '@/lib/db/schema';
 import { eq, and, desc, sql, count } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
+import { postSchema } from '@/lib/validators';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,11 +14,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, subject, course, semester, college, tags: tagNames, threadId, threadOrder } = body;
+    const parsed = postSchema.safeParse(body);
 
-    if (!title?.trim()) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0]?.message || 'Invalid input' }, { status: 400 });
     }
+
+    const { title, description, subject, course, semester, college, tags: tagNames, threadId, threadOrder } = parsed.data;
 
     const postId = randomUUID();
 

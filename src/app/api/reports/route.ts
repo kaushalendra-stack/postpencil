@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
 import { reports } from '@/lib/db/schema';
 import { generateId } from '@/lib/utils';
+import { reportSchema } from '@/lib/validators';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,19 +12,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { targetType, targetId, reason, description } = await request.json();
+    const body = await request.json();
+    const parsed = reportSchema.safeParse(body);
 
-    if (!targetType || !targetId || !reason) {
-      return NextResponse.json({ error: 'Target type, target ID, and reason are required' }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0]?.message || 'Invalid input' }, { status: 400 });
     }
 
-    if (!['post', 'user'].includes(targetType)) {
-      return NextResponse.json({ error: 'Invalid target type' }, { status: 400 });
-    }
-
-    if (!['spam', 'inappropriate', 'copyright', 'harassment', 'other'].includes(reason)) {
-      return NextResponse.json({ error: 'Invalid reason' }, { status: 400 });
-    }
+    const { targetType, targetId, reason, description } = parsed.data;
 
     const report = await db.insert(reports).values({
       id: generateId(),

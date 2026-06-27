@@ -61,7 +61,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       if (!user?.email) return false;
 
-      // Check if user already exists with this email
       const [existingUser] = await db
         .select()
         .from(users)
@@ -69,7 +68,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         .limit(1);
 
       if (existingUser) {
-        // Check if this OAuth account is already linked
+        if (existingUser.isBanned) return false;
+
         const [existingAccount] = await db
           .select()
           .from(accounts)
@@ -82,7 +82,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .limit(1);
 
         if (!existingAccount) {
-          // Link OAuth account to existing user
           await db.insert(accounts).values({
             id: randomUUID(),
             userId: existingUser.id,
@@ -92,7 +91,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
         }
 
-        // Update user's provider info and image
         await db
           .update(users)
           .set({
@@ -104,17 +102,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .where(eq(users.id, existingUser.id));
 
       } else {
-        // Create new user
-        const name = user.name || user.email.split('@')[0];
+        const name = user.name || (user.email ? user.email.split('@')[0] : 'user');
         const baseUsername = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'user';
         let username = baseUsername;
         let counter = 1;
+        const maxAttempts = 50;
 
-        while (true) {
+        while (counter <= maxAttempts) {
           const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.username, username)).limit(1);
           if (!existing) break;
           username = `${baseUsername}${counter}`;
           counter++;
+        }
+        if (counter > maxAttempts) {
+          username = `${baseUsername}${Date.now()}`;
         }
 
         const [newUser] = await db.insert(users).values({
@@ -130,7 +131,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (newUser) {
           sendEmail({
-            to: user.email,
+            to: user.email!,
             type: 'welcome',
             name: name as string,
             purpose: 'welcome',
@@ -163,15 +164,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user && token.id) {
         session.user.id = token.id as string;
-        const [dbUser] = await db.select().from(users).where(eq(users.id, token.id as string)).limit(1);
-        if (dbUser) {
-          session.user.name = dbUser.name ?? session.user.name;
-          session.user.email = dbUser.email ?? session.user.email;
-          session.user.image = dbUser.image ?? session.user.image;
-          (session.user as any).username = dbUser.username;
-          (session.user as any).role = dbUser.role;
-          (session.user as any).provider = dbUser.provider;
-          (session.user as any).isBanned = dbUser.isBanned;
+        try {
+          const [dbUser] = await db.select().from(users).where(eq(users.id, token.id as string)).limit(1);
+          if (dbUser) {
+            session.user.name = dbUser.name ?? session.user.name;
+            session.user.email = dbUser.email ?? session.user.email;
+            session.user.image = dbUser.image ?? session.user.image;
+            (session.user as any).username = dbUser.username;
+            (session.user as any).role = dbUser.role;
+            (session.user as any).provider = dbUser.provider;
+            (session.user as any).isBanned = dbUser.isBanned;
+          }
+        } catch (e) {
+          console.error('Session callback DB error:', e);
         }
       }
       return session;

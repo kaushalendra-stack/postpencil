@@ -3,13 +3,14 @@ import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
-const PUBLIC_ROUTES = [
+const PUBLIC_PAGE_ROUTES = new Set([
   '/',
   '/home',
   '/explore',
   '/search',
   '/login',
   '/register',
+  '/logout',
   '/verify-email',
   '/pending-verification',
   '/forgot-password',
@@ -18,30 +19,44 @@ const PUBLIC_ROUTES = [
   '/terms',
   '/cookies',
   '/guidelines',
-]
+  '/help',
+  '/discuss',
+])
 
-const PUBLIC_API_ROUTES = [
-  '/api/auth/',
+const PUBLIC_GET_API_ROUTES = new Set([
   '/api/posts',
   '/api/tags',
   '/api/search',
-  '/api/users/',
+])
+
+const AUTH_POST_ROUTES = [
+  '/api/auth/register',
+  '/api/auth/verify-email',
+  '/api/auth/resend-verification',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+  '/api/auth/captcha',
 ]
 
-function isPublicRoute(pathname: string): boolean {
-  if (PUBLIC_ROUTES.includes(pathname)) return true
+const AUTH_PUBLIC_ROUTES = [
+  '/api/auth/session',
+  '/api/auth/csrf',
+  '/api/auth/providers',
+  '/api/auth/signin',
+  '/api/auth/signout',
+  '/api/auth/callback',
+]
+
+function isPublicPage(pathname: string): boolean {
+  if (PUBLIC_PAGE_ROUTES.has(pathname)) return true
   if (pathname.startsWith('/post/') || pathname.startsWith('/user/') || pathname.startsWith('/discuss/')) return true
   return false
 }
 
-function isPublicApiRoute(pathname: string): boolean {
-  return PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))
-}
-
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (pathname.startsWith('/api/auth/') || pathname.startsWith('/_next/') || pathname.includes('.')) {
+  if (pathname.startsWith('/_next') || pathname === '/favicon.ico' || pathname === '/logo.svg' || pathname === '/logo.png' || pathname === '/og.png' || pathname === '/apple-touch-icon.png') {
     return NextResponse.next()
   }
 
@@ -53,10 +68,13 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/')) {
     const ip = getClientIp(request)
 
-    if (pathname.startsWith('/api/auth/')) {
-      const { allowed, remaining, resetTime } = checkRateLimit(`auth:${ip}`, { windowMs: 15 * 60 * 1000, maxRequests: 10 })
+    const isAuthInternal = request.method === 'GET' && AUTH_PUBLIC_ROUTES.some((r) => pathname.startsWith(r))
+
+    if (pathname.startsWith('/api/auth/') && !isAuthInternal) {
+      const { allowed, resetTime } = checkRateLimit(`auth:${ip}`, { windowMs: 15 * 60 * 1000, maxRequests: 10 })
       if (!allowed) {
-        return NextResponse.json({ error: 'Too many requests' }, { status: 429 }, {
+        return NextResponse.json({ error: 'Too many requests' }, {
+          status: 429,
           headers: { 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': String(resetTime) },
         })
       }
@@ -72,8 +90,18 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    if (isPublicApiRoute(pathname) && request.method === 'GET') {
+    if (request.method === 'POST' && AUTH_POST_ROUTES.some((r) => pathname.startsWith(r))) {
       return NextResponse.next()
+    }
+
+    if (request.method === 'GET' && AUTH_PUBLIC_ROUTES.some((r) => pathname.startsWith(r))) {
+      return NextResponse.next()
+    }
+
+    if (request.method === 'GET') {
+      if (PUBLIC_GET_API_ROUTES.has(pathname) || pathname.startsWith('/api/posts/') || pathname.startsWith('/api/tags') || pathname.startsWith('/api/search') || pathname.startsWith('/api/users/')) {
+        return NextResponse.next()
+      }
     }
 
     if (!token) {
@@ -90,7 +118,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  if (isPublicRoute(pathname)) {
+  if (isPublicPage(pathname)) {
     if (token && (pathname === '/login' || pathname === '/register')) {
       return NextResponse.redirect(new URL('/home', request.url))
     }
@@ -103,7 +131,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  if (pathname === '/admin') {
+  if (pathname.startsWith('/admin')) {
     const tokenRole = (token as unknown as { role?: string })?.role
     if (tokenRole !== 'admin') {
       return NextResponse.redirect(new URL('/home', request.url))

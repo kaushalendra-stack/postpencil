@@ -4,14 +4,23 @@ import { users, verificationTokens } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { sendEmail } from '@/lib/email';
+import { forgotPasswordSchema } from '@/lib/validators';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json();
-
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 1024) {
+      return NextResponse.json({ error: 'Request too large' }, { status: 413 });
     }
+
+    const body = await request.json();
+    const parsed = forgotPasswordSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0]?.message || 'Invalid email' }, { status: 400 });
+    }
+
+    const { email } = parsed.data;
 
     const user = await db.query.users.findFirst({
       where: eq(users.email, email),

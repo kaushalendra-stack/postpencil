@@ -22,7 +22,7 @@ export async function POST(
 
     if (existing) {
       await db.delete(discussionLikes).where(eq(discussionLikes.id, existing.id));
-      await db.update(discussions).set({ likesCount: sql`${discussions.likesCount} - 1` }).where(eq(discussions.id, id));
+      await db.update(discussions).set({ likesCount: sql`GREATEST(${discussions.likesCount} - 1, 0)` }).where(eq(discussions.id, id));
       return NextResponse.json({ isLiked: false });
     } else {
       await db.insert(discussionLikes).values({ id: randomUUID(), userId: session.user.id, discussionId: id });
