@@ -37,6 +37,8 @@ const AUTH_POST_ROUTES = [
   '/api/auth/reset-password',
   '/api/auth/check-verification',
   '/api/auth/callback',
+  '/api/auth/signout',
+  '/api/auth/signin',
 ]
 
 const AUTH_PUBLIC_ROUTES = [
