@@ -12,7 +12,7 @@ export default function LogoutPage() {
 
   const handleLogout = async () => {
     setLoading(true)
-    await signOut({ callbackUrl: '/' })
+    await signOut({ redirect: true, callbackUrl: '/' })
   }
 
   return (

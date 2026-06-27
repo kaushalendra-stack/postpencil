@@ -182,7 +182,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session;
     },
   },
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  baseURL: process.env.AUTH_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   pages: {
     signIn: '/login',
     error: '/login',
