@@ -27,6 +27,7 @@ const PUBLIC_GET_API_ROUTES = new Set([
   '/api/posts',
   '/api/tags',
   '/api/search',
+  '/api/discussions',
 ])
 
 const AUTH_POST_ROUTES = [
@@ -102,7 +103,7 @@ export async function proxy(request: NextRequest) {
     }
 
     if (request.method === 'GET') {
-      if (PUBLIC_GET_API_ROUTES.has(pathname) || pathname.startsWith('/api/posts/') || pathname.startsWith('/api/tags') || pathname.startsWith('/api/search') || pathname.startsWith('/api/users/')) {
+      if (PUBLIC_GET_API_ROUTES.has(pathname) || pathname.startsWith('/api/posts/') || pathname.startsWith('/api/tags') || pathname.startsWith('/api/search') || pathname.startsWith('/api/users/') || pathname.startsWith('/api/discussions/')) {
         return NextResponse.next()
       }
     }
