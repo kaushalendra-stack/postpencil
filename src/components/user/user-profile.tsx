@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { useParams } from 'next/navigation'
@@ -98,12 +99,12 @@ export function UserProfile() {
   const [activeTab, setActiveTab] = useState<'resources' | 'likes'>('resources')
   const bannerRef = useRef<HTMLInputElement>(null)
   const avatarRef = useRef<HTMLInputElement>(null)
-  const [bannerPreview, setBannerPreview] = useState(user?.banner || '')
+  const [, setBannerPreview] = useState(user?.banner || '')
   const [avatarPreview, setAvatarPreview] = useState(user?.image || '')
   const [followersModal, setFollowersModal] = useState<{ open: boolean; type: 'followers' | 'following' }>({ open: false, type: 'followers' })
 
   const uploadMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: { banner?: string; image?: string }) => {
       const res = await fetch(`/api/users/${username}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
       if (!res.ok) throw new Error('Failed')
       return res.json()
@@ -204,7 +205,7 @@ export function UserProfile() {
     <div className="min-h-screen">
       {/* Banner */}
       <div className="h-36 sm:h-44 bg-gradient-to-br from-muted to-muted/60 relative group cursor-pointer" onClick={() => isOwnProfile && bannerRef.current?.click()}>
-        {user.banner && <img src={user.banner} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+        {user.banner && <Image src={user.banner} alt="" fill sizes="100vw" className="object-cover" />}
         {isOwnProfile && (
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
             <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 rounded-full px-3 py-1.5 text-xs font-medium flex items-center gap-1.5"><Camera className="h-3.5 w-3.5" />Change banner</div>

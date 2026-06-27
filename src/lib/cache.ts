@@ -1,7 +1,7 @@
 import { unstable_cache } from 'next/cache'
 import { db } from '@/lib/db'
 import { posts, users, tags, files, postTags } from '@/lib/db/schema'
-import { eq, desc, sql, and, inArray } from 'drizzle-orm'
+import { eq, desc, inArray } from 'drizzle-orm'
 
 export const getCachedPost = unstable_cache(
   async (postId: string) => {

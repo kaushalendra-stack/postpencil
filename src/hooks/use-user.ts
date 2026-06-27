@@ -13,7 +13,7 @@ export function useFollowUser() {
       fetch(`/api/users/${userId}/follow`, { method: 'POST' }).then((res) =>
         res.json()
       ),
-    onMutate: async (userId) => {
+    onMutate: async (_userId) => {
       await queryClient.cancelQueries({ queryKey: ['users'] })
     },
     onSettled: () => {

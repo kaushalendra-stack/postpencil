@@ -5,7 +5,7 @@ import { DiscussionCard } from './discussion-card'
 import { DiscussionCompose } from './discussion-compose'
 import { Button } from '@/components/ui/button'
 import { useInView } from 'react-intersection-observer'
-import { Loader2, Inbox, MessageSquare } from 'lucide-react'
+import { Loader2, MessageSquare } from 'lucide-react'
 
 export function DiscussionFeed() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useDiscussionFeed()

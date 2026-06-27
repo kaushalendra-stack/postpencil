@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       fileUrl: data.file_url || '',
       fileSize: file.size,
       mimeType,
-      fileType: fileType as any,
+      fileType: fileType as 'document' | 'image' | 'pdf' | 'presentation' | 'zip',
     });
 
     return NextResponse.json({

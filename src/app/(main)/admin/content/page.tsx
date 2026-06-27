@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import {
-  FileText, Eye, Heart, MessageCircle, Download, Calendar, Search, ExternalLink,
+  FileText, Eye, Heart, MessageCircle, Download, Search,
 } from 'lucide-react'
 import { cn, formatDate, formatNumber } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -71,7 +71,7 @@ export default function AdminContentPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {posts.map((post: any) => (
+            {posts.map((post: { id: string; title: string; description: string | null; subject: string | null; course: string | null; createdAt: string; likesCount: number; commentsCount: number; downloadsCount: number; viewsCount: number; user?: { name: string | null; username: string; image: string | null } }) => (
               <Link
                 key={post.id}
                 href={`/post/${post.id}`}

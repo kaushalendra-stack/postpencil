@@ -1,21 +1,19 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
 
 interface UseUploadOptions {
-  onSuccess?: (data: any) => void
+  onSuccess?: (data: { id: string; fileUrl: string; fileName: string }) => void
 }
 
 export function useUpload({ onSuccess }: UseUploadOptions = {}) {
-  const { data: session } = useSession()
   const [progress, setProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
 
   const upload = useCallback(
     (file: File, postId?: string) => {
-      return new Promise<any>((resolve, reject) => {
+      return new Promise<{ id: string; fileUrl: string; fileName: string }>((resolve, reject) => {
         const formData = new FormData()
         formData.append('file', file)
         if (postId) formData.append('postId', postId)

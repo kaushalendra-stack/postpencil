@@ -36,7 +36,7 @@ export function ThreadNav({ threadTitle, threadOrder, threadCount, postId, threa
 
       {/* Progress dots */}
       <div className="flex items-center gap-1 mb-3">
-        {threadPosts.map((post, i) => (
+        {threadPosts.map((post) => (
           <button
             key={post.id}
             onClick={() => router.push(`/post/${post.id}`)}

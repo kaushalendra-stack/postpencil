@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { posts, users, tags, postTags, files } from '@/lib/db/schema';
+import { posts, users, tags } from '@/lib/db/schema';
 import { eq, or, like, sql, and, desc } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {

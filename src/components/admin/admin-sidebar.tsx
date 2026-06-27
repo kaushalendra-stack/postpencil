@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { useTheme } from 'next-themes'
 import {
   LayoutDashboard,
@@ -11,7 +10,6 @@ import {
   AlertTriangle,
   FileText,
   Settings,
-  HelpCircle,
   Sun,
   Moon,
   LogOut,
@@ -139,7 +137,7 @@ export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{session.user.name}</p>
-              <p className="text-xs text-muted-foreground truncate">@{(session.user as any).username || 'user'}</p>
+              <p className="text-xs text-muted-foreground truncate">@{session.user.username || 'user'}</p>
             </div>
             <Link
               href="/logout"

@@ -5,7 +5,7 @@ import { bookmarkCollections, bookmarks } from '@/lib/db/schema';
 import { eq, desc, count } from 'drizzle-orm';
 import { generateId } from '@/lib/utils';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await auth();
     if (!session?.user?.id) {

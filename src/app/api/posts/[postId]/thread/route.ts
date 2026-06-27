@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { auth } from '@/lib/auth/config';
 import { posts, users, files } from '@/lib/db/schema';
-import { eq, and, sql, asc } from 'drizzle-orm';
+import { eq, sql, asc } from 'drizzle-orm';
 
 export async function GET(
   request: NextRequest,
@@ -10,8 +9,6 @@ export async function GET(
 ) {
   try {
     const { postId } = await params;
-    const session = await auth();
-    const userId = session?.user?.id;
 
     const currentPost = await db.query.posts.findFirst({
       where: eq(posts.id, postId),

@@ -3,6 +3,16 @@
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 
+interface DiscussionPage {
+  data: Array<{ id: string; isLiked?: boolean; likesCount?: number } & Record<string, unknown>>
+  hasMore: boolean
+  page: number
+}
+
+interface DiscussionData {
+  pages: DiscussionPage[]
+}
+
 const DISCUSSION_CACHE_TIME = 5 * 60 * 1000
 
 export function useDiscussionFeed() {
@@ -10,7 +20,7 @@ export function useDiscussionFeed() {
     queryKey: ['discussions'],
     queryFn: ({ pageParam = 1 }) =>
       fetch(`/api/discussions?page=${pageParam}`).then((res) => res.json()),
-    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.page + 1 : undefined,
+    getNextPageParam: (lastPage: DiscussionPage) => lastPage.hasMore ? lastPage.page + 1 : undefined,
     initialPageParam: 1,
     staleTime: DISCUSSION_CACHE_TIME,
     gcTime: 15 * 60 * 1000,
@@ -34,15 +44,15 @@ export function useLikeDiscussion() {
       fetch(`/api/discussions/${discussionId}/like`, { method: 'POST' }).then((res) => res.json()),
     onMutate: async (discussionId) => {
       await queryClient.cancelQueries({ queryKey: ['discussions'] })
-      queryClient.setQueriesData({ queryKey: ['discussions'] }, (old: any) => {
+      queryClient.setQueriesData<DiscussionData>({ queryKey: ['discussions'] }, (old) => {
         if (!old) return old
         return {
           ...old,
-          pages: old.pages.map((page: any) => ({
+          pages: old.pages.map((page) => ({
             ...page,
-            data: page.data.map((d: any) =>
+            data: page.data.map((d) =>
               d.id === discussionId
-                ? { ...d, isLiked: !d.isLiked, likesCount: d.isLiked ? d.likesCount - 1 : d.likesCount + 1 }
+                ? { ...d, isLiked: !d.isLiked, likesCount: d.isLiked ? (d.likesCount ?? 0) - 1 : (d.likesCount ?? 0) + 1 }
                 : d
             ),
           })),

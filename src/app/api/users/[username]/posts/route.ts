@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { auth } from '@/lib/auth/config';
 import { posts, users, files, postTags, tags } from '@/lib/db/schema';
 import { eq, and, desc, sql, count } from 'drizzle-orm';
 

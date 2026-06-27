@@ -28,7 +28,7 @@ export function ProfileHeader({ user, isOwnProfile = false, isFollowing = false,
   const [avatarPreview, setAvatarPreview] = useState(user.image || '')
 
   const uploadMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: { banner?: string; image?: string }) => {
       const res = await fetch(`/api/users/${user.username}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       if (!res.ok) throw new Error('Failed');
       return res.json();

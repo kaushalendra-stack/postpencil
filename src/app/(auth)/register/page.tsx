@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
-import { Eye, EyeOff, ArrowRight, Loader2, Mail, CheckCircle, RotateCw } from 'lucide-react'
+import Image from 'next/image'
+import { Eye, EyeOff, ArrowRight, Loader2, Mail, RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { FadeIn } from '@/components/ui/animations'
-import { Captcha, verifyCaptcha } from '@/components/auth/captcha'
 
 function BrandPanel() {
   return (
@@ -19,7 +19,7 @@ function BrandPanel() {
       <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-white/[0.04] rounded-full blur-3xl" style={{ animation: 'float-y 8s ease-in-out 4s infinite' }} />
       <style>{`@keyframes float-y { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }`}</style>
       <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-        <FadeIn delay={0.1}><Link href="/" className="inline-flex items-center gap-2"><img src="/logo.svg" alt="PostPencil" className="h-12 w-auto brightness-0 invert" /></Link></FadeIn>
+        <FadeIn delay={0.1}><Link href="/" className="inline-flex items-center gap-2"><Image src="/logo.svg" alt="PostPencil" width={48} height={48} className="h-12 w-auto brightness-0 invert" /></Link></FadeIn>
         <div className="space-y-6">
           <FadeIn delay={0.2}><h2 className="text-4xl font-bold text-white leading-tight tracking-tight">Share knowledge.<br /><span className="text-zinc-400">Learn together.</span></h2></FadeIn>
           <FadeIn delay={0.3}><p className="text-zinc-400 text-lg max-w-md leading-relaxed">Join thousands of students sharing notes, resources, and study materials in a social learning experience.</p></FadeIn>
@@ -40,11 +40,10 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [registered, setRegistered] = useState(false)
-  const [registeredEmail, setRegisteredEmail] = useState('')
+  const [registered] = useState(false)
+  const [registeredEmail] = useState('')
   const [resendCooldown, setResendCooldown] = useState(30)
   const [resending, setResending] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState('')
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -70,14 +69,6 @@ export default function RegisterPage() {
     if (!/[a-z]/.test(password)) { setError('Password must contain at least one lowercase letter'); return }
     if (!/[0-9]/.test(password)) { setError('Password must contain at least one number'); return }
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) { setError('Password must contain at least one special character'); return }
-
-    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
-      const valid = await verifyCaptcha(captchaToken)
-      if (!valid) {
-        setError('CAPTCHA verification failed. Please try again.')
-        return
-      }
-    }
 
     setLoading(true)
     try {
@@ -122,7 +113,7 @@ export default function RegisterPage() {
       <BrandPanel />
       <div className="flex-1 flex items-center justify-center px-6 py-12 bg-background">
         <div className="w-full max-w-[400px]">
-          <FadeIn delay={0.1}><div className="lg:hidden mb-10 text-center"><Link href="/" className="inline-flex items-center gap-2"><img src="/logo.svg" alt="PostPencil" className="h-12 w-auto dark:brightness-0 dark:invert" /></Link></div></FadeIn>
+          <FadeIn delay={0.1}><div className="lg:hidden mb-10 text-center"><Link href="/" className="inline-flex items-center gap-2"><Image src="/logo.svg" alt="PostPencil" width={48} height={48} className="h-12 w-auto dark:brightness-0 dark:invert" /></Link></div></FadeIn>
           <FadeIn delay={0.15}><div className="space-y-2 mb-8"><h1 className="text-2xl font-semibold tracking-tight">Create an account</h1><p className="text-muted-foreground text-sm">Start sharing and discovering learning resources</p></div></FadeIn>
           <FadeIn delay={0.2}>
             <div className="space-y-3 mb-6">
@@ -160,13 +151,6 @@ export default function RegisterPage() {
               </div>
             </FadeIn>
             <FadeIn delay={0.45}><div className="space-y-1.5"><Label className="text-sm font-medium">Confirm password</Label><Input type="password" placeholder="Confirm your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="h-11 rounded-xl bg-muted/30" /></div></FadeIn>
-            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
-              <FadeIn delay={0.47}>
-                <div className="flex justify-center">
-                  <Captcha onVerify={setCaptchaToken} action="register" />
-                </div>
-              </FadeIn>
-            )}
             <FadeIn delay={0.5}><Button type="submit" className="w-full h-11 rounded-xl font-medium text-sm bg-foreground text-background hover:bg-foreground/90 active:scale-[0.98] transition-all" disabled={loading}>{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span>Create account</span><ArrowRight className="h-4 w-4 ml-1" /></>}</Button></FadeIn>
           </form>
           <FadeIn delay={0.55}><p className="text-center text-sm text-muted-foreground mt-6">Already have an account? <Link href="/login" className="font-medium text-foreground hover:underline underline-offset-4">Sign in</Link></p></FadeIn>

@@ -24,7 +24,7 @@ function PendingContent() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     })
-      .then(r => r.json().then(d => {
+      .then(r => r.json().then((_d) => {
         if (cancelled) return
         setEmailStatus(r.ok ? 'sent' : 'failed')
         if (r.ok) setSent(true)

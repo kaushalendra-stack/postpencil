@@ -47,7 +47,7 @@ export async function GET(
     const isOwnProfile = session?.user?.id === user.id;
 
     if (user.isPrivate && !isOwnProfile && session?.user?.role !== 'admin') {
-      const { email, ...publicProfile } = user;
+      const { email: _, ...publicProfile } = user;
       return NextResponse.json(publicProfile, { status: 200 });
     }
 

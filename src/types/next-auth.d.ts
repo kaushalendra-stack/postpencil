@@ -6,6 +6,12 @@ declare module "next-auth" {
       id: string;
       role: string;
       username: string;
+      isBanned: boolean;
+      bio: string | null;
+      college: string | null;
+      course: string | null;
+      semester: string | null;
+      provider: string | null;
     } & DefaultSession["user"];
   }
 }
@@ -15,13 +21,5 @@ declare module "next-auth/jwt" {
     id?: string;
     role?: string;
     provider?: string;
-  }
-}
-
-interface Window {
-  turnstile?: {
-    render: (container: HTMLElement | string, options: Record<string, unknown>) => string
-    remove: (widgetId: string) => void
-    reset: (widgetId: string) => void
   }
 }

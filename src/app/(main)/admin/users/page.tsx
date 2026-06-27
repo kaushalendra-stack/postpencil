@@ -5,10 +5,10 @@ import Link from 'next/link'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
-  Users, Search, Shield, ShieldOff, ExternalLink, ChevronLeft, ChevronRight,
-  Mail, Calendar, FileText, UserX, UserCheck,
+  Users, Search, ExternalLink, ChevronLeft, ChevronRight,
+  Calendar, FileText, UserX, UserCheck,
 } from 'lucide-react'
-import { cn, formatDate, formatNumber } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 
@@ -38,7 +38,7 @@ export default function AdminUsersPage() {
     },
   })
 
-  const items = (users ?? []).filter((u: any) => {
+  const items = (users ?? []).filter((u: { role: string; isBanned: boolean }) => {
     if (roleFilter === 'admin') return u.role === 'admin'
     if (roleFilter === 'banned') return u.isBanned
     if (roleFilter === 'regular') return u.role !== 'admin' && !u.isBanned
@@ -97,7 +97,7 @@ export default function AdminUsersPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {items.map((user: any) => (
+            {items.map((user: { id: string; name: string | null; username: string; image: string | null; role: string; isBanned: boolean; postsCount: number; followersCount: number; createdAt: string }) => (
               <div key={user.id} className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-all">
                 <div className="flex items-start gap-4">
                   <Avatar className="h-14 w-14 shrink-0">

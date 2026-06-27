@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useTheme } from 'next-themes'
@@ -47,7 +48,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
     <div className="flex h-full flex-col">
       <div className="flex items-center px-4 py-5">
         <Link href="/home" onClick={onMobileClose} className="flex items-center gap-2">
-          <img src="/logo.svg" alt="PostPencil" className="h-12 w-auto dark:brightness-0 dark:invert" />
+          <Image src="/logo.svg" alt="PostPencil" width={48} height={48} className="h-12 w-auto dark:brightness-0 dark:invert" />
         </Link>
       </div>
 
@@ -73,17 +74,17 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         })}
 
         <Link
-          href={`/user/${(session?.user as any)?.username || ''}`}
+          href={`/user/${session?.user?.username || ''}`}
           onClick={onMobileClose}
           className={cn(
             'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
-            pathname === `/user/${(session?.user as any)?.username}` ? 'bg-accent text-foreground font-semibold' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
+            pathname === `/user/${session?.user?.username}` ? 'bg-accent text-foreground font-semibold' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
           )}
         >
-          <User className="h-[22px] w-[22px] shrink-0" strokeWidth={pathname === `/user/${(session?.user as any)?.username}` ? 2.2 : 1.8} />
+          <User className="h-[22px] w-[22px] shrink-0" strokeWidth={pathname === `/user/${session?.user?.username}` ? 2.2 : 1.8} />
           <span className="text-[15px]">Profile</span>
         </Link>
-        {(session?.user as any)?.role === 'admin' && (
+        {session?.user?.role === 'admin' && (
           <Link
             href="/admin"
             onClick={onMobileClose}
@@ -170,9 +171,9 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             </Avatar>
             <div className="flex-1 min-w-0 xl:block">
               <p className="font-semibold text-sm truncate">{session.user.name}</p>
-              <p className="text-xs text-muted-foreground truncate">@{(session.user as any).username || 'user'}</p>
+              <p className="text-xs text-muted-foreground truncate">@{session.user.username || 'user'}</p>
             </div>
-            <Link href="/logout" onClick={onMobileClose}>
+            <Link href="/logout" onClick={onMobileClose} aria-label="Log out">
               <LogOut className="h-4 w-4 text-muted-foreground shrink-0 xl:block" />
             </Link>
           </div>
@@ -191,7 +192,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         <>
           <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden" onClick={onMobileClose} />
           <div className="fixed inset-y-0 left-0 z-50 w-[280px] bg-background lg:hidden animate-in slide-in-from-left duration-200">
-            <button onClick={onMobileClose} className="absolute right-3 top-4 rounded-lg p-1.5 text-muted-foreground hover:bg-accent">
+            <button onClick={onMobileClose} aria-label="Close menu" className="absolute right-3 top-4 rounded-lg p-1.5 text-muted-foreground hover:bg-accent">
               <X className="h-5 w-5" />
             </button>
             {sidebarContent}

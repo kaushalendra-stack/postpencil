@@ -2,25 +2,20 @@
 
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { ImagePlus, Send, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { useUpload } from '@/hooks/use-upload'
 
 export function DiscussionCompose() {
   const { data: session } = useSession()
-  const router = useRouter()
   const queryClient = useQueryClient()
   const [content, setContent] = useState('')
   const [isFocused, setIsFocused] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-
-  const { upload } = useUpload()
 
   if (!session?.user) return null
 
@@ -48,7 +43,7 @@ export function DiscussionCompose() {
 
     setIsSubmitting(true)
     try {
-      let imageUrl: string | null = null
+      const imageUrl: string | null = null
 
       const res = await fetch('/api/discussions', {
         method: 'POST',

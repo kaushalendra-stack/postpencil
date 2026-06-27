@@ -1,13 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, ChevronDown, ChevronUp } from 'lucide-react'
+import Image from 'next/image'
+import { Heart, MessageCircle, Share2, Send } from 'lucide-react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useLikeDiscussion, useAddDiscussionReply, useDiscussion } from '@/hooks/use-discussions'
 import { cn, formatDate, formatNumber } from '@/lib/utils'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
-import toast from 'react-hot-toast'
 import type { DiscussionReplyWithUser } from '@/lib/types'
 
 function ReplyItem({ reply, isNested = false }: { reply: DiscussionReplyWithUser & { replies?: DiscussionReplyWithUser[] }; isNested?: boolean }) {
@@ -136,8 +136,8 @@ export function DiscussionDetail({ discussionId }: { discussionId: string }) {
                 {discussion.content}
               </p>
               {discussion.imageUrl && (
-                <div className="mt-3 rounded-xl overflow-hidden border border-border/30">
-                  <img src={discussion.imageUrl} alt="" className="w-full max-h-96 object-cover" />
+                <div className="mt-3 rounded-xl overflow-hidden border border-border/30 relative aspect-video">
+                  <Image src={discussion.imageUrl} alt="" fill sizes="(max-width: 768px) 100vw, 60vw" className="object-cover" />
                 </div>
               )}
               <div className="flex items-center gap-0.5 mt-3 -ml-1.5">
@@ -219,7 +219,7 @@ export function DiscussionDetail({ discussionId }: { discussionId: string }) {
         {/* Replies */}
         {threadedReplies.length > 0 && (
           <div className="divide-y divide-border/20">
-            {threadedReplies.map((reply: any) => (
+            {threadedReplies.map((reply: DiscussionReplyWithUser & { replies?: DiscussionReplyWithUser[] }) => (
               <ReplyItem key={reply.id} reply={reply} />
             ))}
           </div>

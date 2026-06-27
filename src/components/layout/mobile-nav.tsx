@@ -47,6 +47,7 @@ export function MobileNav() {
         })}
         <Link
           href="/upload"
+          aria-label="Upload resource"
           className="flex items-center justify-center h-10 w-10 rounded-full bg-foreground text-background shadow-md active:scale-95 transition-transform -mt-3"
         >
           <Plus className="h-5 w-5" strokeWidth={2.5} />

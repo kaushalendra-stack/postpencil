@@ -3,9 +3,8 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
-  Settings, User, Shield, Bell, Palette, Mail, ExternalLink, LogOut,
+  Settings, User, Shield, Mail, ExternalLink,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export default function AdminSettingsPage() {
@@ -54,7 +53,7 @@ export default function AdminSettingsPage() {
             </Avatar>
             <div>
               <h3 className="font-semibold text-lg">{session?.user?.name}</h3>
-              <p className="text-sm text-muted-foreground">@{(session?.user as any)?.username}</p>
+              <p className="text-sm text-muted-foreground">@{session?.user?.username}</p>
               <span className="inline-flex items-center gap-1 mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400">
                 <Shield className="h-3 w-3" />
                 Admin

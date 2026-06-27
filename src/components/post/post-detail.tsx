@@ -69,7 +69,7 @@ export function PostDetail() {
           {post.subject && <Badge variant="secondary">{post.subject}</Badge>}
           {post.course && <Badge variant="outline">{post.course}</Badge>}
           {post.semester && <Badge variant="outline">{post.semester}</Badge>}
-          {post.tags?.map((t: any) => <Badge key={t.id} variant="secondary" className="rounded-full">#{t.name}</Badge>)}
+          {post.tags?.map((t: { id: string; name: string }) => <Badge key={t.id} variant="secondary" className="rounded-full">#{t.name}</Badge>)}
         </div>
         {pf && (
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/50 border border-border/50">

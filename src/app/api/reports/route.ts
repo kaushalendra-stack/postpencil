@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     const { targetType, targetId, reason, description } = parsed.data;
 
-    const report = await db.insert(reports).values({
+    await db.insert(reports).values({
       id: generateId(),
       reporterId: session.user.id,
       targetType,

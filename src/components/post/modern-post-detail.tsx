@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { Heart, MessageCircle, Bookmark, Share2, Download, FileText, Image as ImageIcon, Presentation, Archive, Eye, Calendar, GraduationCap, BookOpen, Hash, Layers } from 'lucide-react'
+import { Heart, Bookmark, Share2, Download, FileText, Image as ImageIcon, Presentation, Archive, Eye, Calendar, GraduationCap, BookOpen, Hash, Layers } from 'lucide-react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -57,7 +57,7 @@ export function ModernPostDetail() {
   const likeMutation = useLikePost()
   const bookmarkMutation = useBookmarkPost()
   const { data: session } = useSession()
-  const [threadData, setThreadData] = useState<any>(null)
+  const [threadData, setThreadData] = useState<{ count: number; threadTitle: string; posts: Array<{ id: string; threadOrder: number; title: string }> } | null>(null)
 
   useEffect(() => {
     if (post?.threadId) {
@@ -182,7 +182,7 @@ export function ModernPostDetail() {
                 Sem {post.semester}
               </span>
             )}
-            {post.tags?.map((t: any) => (
+            {post.tags?.map((t: { id: string; name: string }) => (
               <span key={t.id} className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                 <Hash className="h-3 w-3" />
                 {t.name}
@@ -263,7 +263,7 @@ export function ModernPostDetail() {
         </div>
 
         {/* Continue thread button (author only) */}
-        {post.threadId && threadData && session?.user && (session.user as any).id === post.user?.id && (
+        {post.threadId && threadData && session?.user && session.user.id === post.user?.id && (
           <Link
             href="/upload"
             className="flex items-center gap-3 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-4 text-primary/80 hover:bg-primary/10 hover:text-primary transition-all duration-200 animate-float-up"
@@ -305,7 +305,7 @@ function RelatedPosts({ postId }: { postId: string }) {
     <div className="border-t border-border/30 pt-6 mt-6">
       <h3 className="text-sm font-bold mb-4">Related Resources</h3>
       <div className="space-y-3">
-        {related.map((post: any) => (
+        {related.map((post: { id: string; title: string; description: string | null; user?: { username: string }; likesCount: number; viewsCount: number }) => (
           <Link
             key={post.id}
             href={`/post/${post.id}`}

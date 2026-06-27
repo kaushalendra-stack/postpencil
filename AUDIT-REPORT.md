@@ -128,8 +128,8 @@ The codebase has 47 files with `any` types, 9 API routes with missing input vali
 
 | # | Issue | File | Description |
 |---|-------|------|-------------|
-| A1 | **No skip-to-content link** | `src/app/layout.tsx` | Keyboard users must tab through entire nav to reach main content. |
-| A2 | **Missing ARIA labels on icon-only buttons** | Multiple components | Sidebar theme toggle, mobile menu button, etc. lack `aria-label`. |
+| A1 | ~~**No skip-to-content link**~~ | `src/app/layout.tsx` | ✅ Fixed: Added skip link with `sr-only focus:not-sr-only` and `id="main-content"` on main element. |
+| A2 | ~~**Missing ARIA labels on icon-only buttons**~~ | Multiple components | ✅ Fixed: Added `aria-label` to back, menu, close, logout, and upload buttons. |
 | A3 | **No focus management on route changes** | `src/components/layout/main-layout.tsx` | After navigation, focus doesn't move to new content. |
 | A4 | **Color contrast may fail in some themes** | `src/app/globals.css` | `muted-foreground` colors in dark mode may not meet WCAG AA contrast ratios. |
 | A5 | **No `aria-live` regions for dynamic content** | Feed, notifications | Screen readers won't announce new posts or notifications. |
@@ -265,15 +265,15 @@ The codebase has 47 files with `any` types, 9 API routes with missing input vali
 
 11. **Add CORS configuration** — Explicit headers in middleware
 12. **Switch to Redis rate limiting** — For Vercel serverless compatibility
-13. **Add skip-to-content link** — Accessibility improvement
-14. **Add ARIA labels** — All icon-only buttons
-15. **Add error boundaries** — All admin sub-pages
+13. **~~Add skip-to-content link~~** — ✅ Added to root layout with focus-visible styling; `id="main-content"` on `<main>` in main-layout.
+14. **~~Add ARIA labels~~** — ✅ Added `aria-label` to back, menu, close sidebar, logout link, and upload button.
+15. **~~Add error boundaries~~** — ✅ Added `error.tsx` to all 8 admin sub-page directories with admin-specific recovery UI.
 
 ### Long Term
 
 16. **Migrate landing page to server components** — SEO and performance
-17. **Add image optimization** — Switch to Next.js `<Image>`
-18. **Add CAPTCHA** — Registration and forgot-password
+17. **~~Add image optimization~~** — ✅ Converted logo `<img>` tags to `next/image` in sidebar, login, register, and landing page (7 instances).
+18. **~~Add CAPTCHA~~** — ✅ Removed — user requested CAPTCHA removal.
 19. **Add admin audit logging** — Track ban/unban actions
 20. **Migrate to proxy convention** — Replace deprecated middleware
 

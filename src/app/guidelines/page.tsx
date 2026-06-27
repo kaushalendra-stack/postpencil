@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { LegalLayout, Section, List, Highlight } from '@/components/legal/legal-layout'
+import { LegalLayout, Section, List } from '@/components/legal/legal-layout'
 import { breadcrumbJsonLd } from '@/lib/seo'
 
 export const metadata: Metadata = {

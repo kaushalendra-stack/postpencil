@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
-import { tickets, users } from '@/lib/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { tickets } from '@/lib/db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { generateId } from '@/lib/utils';
 import { ticketSchema } from '@/lib/validators';
 
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const isAdmin = (session.user as any).role === 'admin';
+    const isAdmin = session.user.role === 'admin';
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -88,7 +88,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const isAdmin = (session.user as any).role === 'admin';
+    const isAdmin = session.user.role === 'admin';
     if (!isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

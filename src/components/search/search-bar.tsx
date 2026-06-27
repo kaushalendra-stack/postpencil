@@ -29,16 +29,15 @@ export function SearchBar({
 }: SearchBarProps) {
   const [value, setValue] = useState(defaultValue)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [recentSearches, setRecentSearches] = useState<string[]>([])
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const stored = localStorage.getItem('recentSearches')
+      return stored ? JSON.parse(stored) : []
+    } catch { return [] }
+  })
   const inputRef = useRef<HTMLInputElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const stored = localStorage.getItem('recentSearches')
-    if (stored) {
-      try { setRecentSearches(JSON.parse(stored)) } catch {}
-    }
-  }, [])
 
   const { data: suggestions } = useQuery({
     queryKey: ['autocomplete', value],

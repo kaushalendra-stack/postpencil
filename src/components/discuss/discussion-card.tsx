@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useLikeDiscussion } from '@/hooks/use-discussions'
@@ -56,8 +57,8 @@ export function DiscussionCard({ discussion, index = 0 }: { discussion: Discussi
           </p>
 
           {discussion.imageUrl && (
-            <div className="mb-3 rounded-xl overflow-hidden border border-border/30">
-              <img src={discussion.imageUrl} alt="" className="w-full max-h-80 object-cover" />
+            <div className="mb-3 rounded-xl overflow-hidden border border-border/30 relative aspect-video">
+              <Image src={discussion.imageUrl} alt="" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
             </div>
           )}
 

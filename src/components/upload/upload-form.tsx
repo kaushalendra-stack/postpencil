@@ -3,7 +3,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
-import { useMutation } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
   Upload,
@@ -132,10 +131,6 @@ export function UploadForm() {
       setTags((prev) => [...prev, trimmed])
       setTagInput('')
     }
-  }
-
-  const removeTag = (tag: string) => {
-    setTags((prev) => prev.filter((t) => t !== tag))
   }
 
   const handlePublish = async () => {

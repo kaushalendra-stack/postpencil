@@ -1,7 +1,16 @@
 'use client'
 
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
+
+interface FeedPage {
+  data: Array<{ id: string; isLiked?: boolean; isBookmarked?: boolean; likesCount?: number } & Record<string, unknown>>
+  hasMore: boolean
+  page: number
+}
+
+interface FeedData {
+  pages: FeedPage[]
+}
 
 const POST_CACHE_TIME = 10 * 60 * 1000
 
@@ -10,7 +19,7 @@ export function useFeed(feedType: string = 'latest') {
     queryKey: ['feed', feedType],
     queryFn: ({ pageParam = 1 }) =>
       fetch(`/api/posts?page=${pageParam}&feed=${feedType}`).then((res) => res.json()),
-    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.page + 1 : undefined,
+    getNextPageParam: (lastPage: FeedPage) => lastPage.hasMore ? lastPage.page + 1 : undefined,
     initialPageParam: 1,
     staleTime: POST_CACHE_TIME,
     gcTime: 30 * 60 * 1000,
@@ -25,15 +34,15 @@ export function useLikePost() {
       fetch(`/api/posts/${postId}/like`, { method: 'POST' }).then((res) => res.json()),
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: ['feed'] })
-      queryClient.setQueriesData({ queryKey: ['feed'] }, (old: any) => {
+      queryClient.setQueriesData<FeedData>({ queryKey: ['feed'] }, (old) => {
         if (!old) return old
         return {
           ...old,
-          pages: old.pages.map((page: any) => ({
+          pages: old.pages.map((page) => ({
             ...page,
-            data: page.data.map((post: any) =>
+            data: page.data.map((post) =>
               post.id === postId
-                ? { ...post, isLiked: !post.isLiked, likesCount: post.isLiked ? post.likesCount - 1 : post.likesCount + 1 }
+                ? { ...post, isLiked: !post.isLiked, likesCount: post.isLiked ? (post.likesCount ?? 0) - 1 : (post.likesCount ?? 0) + 1 }
                 : post
             ),
           })),
@@ -51,13 +60,13 @@ export function useBookmarkPost() {
       fetch(`/api/posts/${postId}/bookmark`, { method: 'POST' }).then((res) => res.json()),
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: ['feed'] })
-      queryClient.setQueriesData({ queryKey: ['feed'] }, (old: any) => {
+      queryClient.setQueriesData<FeedData>({ queryKey: ['feed'] }, (old) => {
         if (!old) return old
         return {
           ...old,
-          pages: old.pages.map((page: any) => ({
+          pages: old.pages.map((page) => ({
             ...page,
-            data: page.data.map((post: any) =>
+            data: page.data.map((post) =>
               post.id === postId ? { ...post, isBookmarked: !post.isBookmarked } : post
             ),
           })),

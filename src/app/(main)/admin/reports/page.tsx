@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
-  AlertTriangle, CheckCircle, XCircle, Clock, Users, Filter,
+  AlertTriangle, CheckCircle, XCircle, Clock, Users,
 } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -29,7 +29,7 @@ export default function AdminReportsPage() {
     onSuccess: () => { toast.success('Report dismissed'); queryClient.invalidateQueries({ queryKey: ['admin', 'reports'] }); setConfirmAction(null) },
   })
 
-  const items = (reports ?? []).filter((r: any) => statusFilter === 'all' || r.status === statusFilter)
+  const items = (reports ?? []).filter((r: { status: string }) => statusFilter === 'all' || r.status === statusFilter)
 
   return (
     <div className="min-h-screen bg-background">
@@ -70,7 +70,7 @@ export default function AdminReportsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {items.map((report: any) => (
+            {items.map((report: { id: string; reason: string; description: string | null; status: string; createdAt: string; reporter?: { username: string } }) => (
               <div key={report.id} className="rounded-xl border border-border bg-card p-5">
                 <div className="flex items-start gap-4">
                   <div className={cn(
@@ -125,7 +125,7 @@ export default function AdminReportsPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="bg-background border border-border rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl">
               <h3 className="text-lg font-bold mb-2">{confirmAction.action === 'resolve' ? 'Resolve' : 'Dismiss'} report?</h3>
-              <p className="text-sm text-muted-foreground mb-6">"{confirmAction.reason}"</p>
+              <p className="text-sm text-muted-foreground mb-6">{`"${confirmAction.reason}"`}</p>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setConfirmAction(null)} className="px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted transition-colors">Cancel</button>
                 <button

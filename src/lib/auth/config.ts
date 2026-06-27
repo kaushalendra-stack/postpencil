@@ -170,10 +170,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             session.user.name = dbUser.name ?? session.user.name;
             session.user.email = dbUser.email ?? session.user.email;
             session.user.image = dbUser.image ?? session.user.image;
-            (session.user as any).username = dbUser.username;
-            (session.user as any).role = dbUser.role;
-            (session.user as any).provider = dbUser.provider;
-            (session.user as any).isBanned = dbUser.isBanned;
+            (session.user).username = dbUser.username;
+            (session.user).role = dbUser.role;
+            (session.user).provider = dbUser.provider;
+            (session.user).isBanned = dbUser.isBanned;
           }
         } catch (e) {
           console.error('Session callback DB error:', e);
@@ -182,6 +182,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session;
     },
   },
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   pages: {
     signIn: '/login',
     error: '/login',

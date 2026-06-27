@@ -4,12 +4,12 @@ import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Eye, EyeOff, ArrowRight, Loader2, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FadeIn } from '@/components/ui/animations'
-import { Captcha, verifyCaptcha } from '@/components/auth/captcha'
 
 function LoginForm() {
   const searchParams = useSearchParams()
@@ -21,27 +21,19 @@ function LoginForm() {
   const [error, setError] = useState(() => {
     if (typeof window === 'undefined') return ''
     const params = new URLSearchParams(window.location.search)
-    return params.get('error') === 'invalid-credentials' ? 'Invalid email/username or password' : ''
+    const err = params.get('error')
+    if (err === 'invalid-credentials' || err === 'CredentialsSignin') return 'Invalid email/username or password'
+    return ''
   })
-  const [showVerified, setShowVerified] = useState(() => {
+  const [showVerified] = useState(() => {
     if (typeof window === 'undefined') return false
     return new URLSearchParams(window.location.search).get('verified') === 'true'
   })
-  const [captchaToken, setCaptchaToken] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-
-    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
-      const valid = await verifyCaptcha(captchaToken)
-      if (!valid) {
-        setError('CAPTCHA verification failed. Please try again.')
-        setLoading(false)
-        return
-      }
-    }
 
     try {
       const checkRes = await fetch('/api/auth/check-verification', {
@@ -49,18 +41,15 @@ function LoginForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier, password }),
       })
-      const checkData = await checkRes.json()
-      if (checkData.verified === false) {
-        setError('Invalid email/username or password')
-        setLoading(false)
-        return
+      if (checkRes.ok) {
+        const checkData = await checkRes.json()
+        if (checkData.verified === false) {
+          setError('Invalid email/username or password')
+          setLoading(false)
+          return
+        }
       }
-      const result = await signIn('credentials', { identifier, password, redirect: false })
-      if (result?.error) {
-        setError('Invalid email/username or password')
-      } else {
-        window.location.href = callbackUrl
-      }
+      await signIn('credentials', { identifier, password, callbackUrl })
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -70,7 +59,6 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left panel */}
       <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-white/[0.03] rounded-full blur-3xl" style={{ animation: 'float-y 8s ease-in-out infinite' }} />
@@ -78,7 +66,7 @@ function LoginForm() {
         <style>{`@keyframes float-y { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }`}</style>
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <FadeIn delay={0.1}>
-            <Link href="/" className="inline-flex items-center gap-2"><img src="/logo.svg" alt="PostPencil" className="h-12 w-auto brightness-0 invert" /></Link>
+            <Link href="/" className="inline-flex items-center gap-2"><Image src="/logo.svg" alt="PostPencil" width={48} height={48} className="h-12 w-auto brightness-0 invert" /></Link>
           </FadeIn>
           <div className="space-y-6">
             <FadeIn delay={0.2}>
@@ -99,11 +87,10 @@ function LoginForm() {
         </div>
       </div>
 
-      {/* Right form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 bg-background">
         <div className="w-full max-w-[400px]">
           <FadeIn delay={0.1}>
-            <div className="lg:hidden mb-10 text-center"><Link href="/" className="inline-flex items-center gap-2"><img src="/logo.svg" alt="PostPencil" className="h-12 w-auto dark:brightness-0 dark:invert" /></Link></div>
+            <div className="lg:hidden mb-10 text-center"><Link href="/" className="inline-flex items-center gap-2"><Image src="/logo.svg" alt="PostPencil" width={48} height={48} className="h-12 w-auto dark:brightness-0 dark:invert" /></Link></div>
           </FadeIn>
           <FadeIn delay={0.15}>
             <div className="space-y-2 mb-8"><h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1><p className="text-muted-foreground text-sm">Sign in to your account to continue</p></div>
@@ -132,13 +119,6 @@ function LoginForm() {
                 </div>
               </div>
             </FadeIn>
-            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
-              <FadeIn delay={0.37}>
-                <div className="flex justify-center">
-                  <Captcha onVerify={setCaptchaToken} action="login" />
-                </div>
-              </FadeIn>
-            )}
             <FadeIn delay={0.4}>
               <Button type="submit" className="w-full h-11 rounded-xl font-medium text-sm bg-foreground text-background hover:bg-foreground/90 active:scale-[0.98] transition-all" disabled={loading}>{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span>Sign in</span><ArrowRight className="h-4 w-4 ml-1" /></>}</Button>
             </FadeIn>

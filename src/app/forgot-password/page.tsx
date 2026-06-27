@@ -7,23 +7,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FadeIn } from '@/components/ui/animations'
-import { Captcha, verifyCaptcha } from '@/components/auth/captcha'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
-      const valid = await verifyCaptcha(captchaToken)
-      if (!valid) {
-        return
-      }
-    }
 
     setLoading(true)
     try {
@@ -57,13 +48,6 @@ export default function ForgotPasswordPage() {
         </FadeIn>
         <form onSubmit={handleSubmit} className="space-y-4">
           <FadeIn delay={0.1}><div className="space-y-1.5"><Label className="text-sm font-medium">Email</Label><Input type="email" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-11 rounded-xl bg-muted/30" /></div></FadeIn>
-          {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
-            <FadeIn delay={0.12}>
-              <div className="flex justify-center">
-                <Captcha onVerify={setCaptchaToken} action="forgot-password" />
-              </div>
-            </FadeIn>
-          )}
           <FadeIn delay={0.15}><Button type="submit" className="w-full h-11 rounded-xl font-medium text-sm bg-foreground text-background" disabled={loading}>{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span>Send reset link</span><ArrowRight className="h-4 w-4 ml-1" /></>}</Button></FadeIn>
         </form>
       </div>

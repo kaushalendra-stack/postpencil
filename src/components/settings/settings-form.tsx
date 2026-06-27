@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import toast from 'react-hot-toast'
 import {
-  User, Shield, Bell, Palette, Link2, FileText, Camera,
+  User, Shield, Bell, Palette, Link2, FileText,
   Sun, Moon, ChevronRight, Eye, EyeOff, ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -42,10 +42,30 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   )
 }
 
+interface UserSettingsData {
+  isPrivate?: boolean;
+  showEmail?: boolean;
+  showFollowers?: boolean;
+  allowComments?: boolean;
+  appearInSearch?: boolean;
+  pushNotifications?: boolean;
+  emailNotifications?: boolean;
+  likeNotifications?: boolean;
+  commentNotifications?: boolean;
+  followNotifications?: boolean;
+  downloadNotifications?: boolean;
+  theme?: string;
+  twitterUrl?: string;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  websiteUrl?: string;
+  [key: string]: unknown;
+}
+
 function useUserSettings() {
   return useQuery({
     queryKey: ['user-settings'],
-    queryFn: async () => {
+    queryFn: async (): Promise<UserSettingsData> => {
       const res = await fetch('/api/user-settings');
       if (!res.ok) throw new Error('Failed to fetch settings');
       return res.json();
@@ -56,7 +76,7 @@ function useUserSettings() {
 function useUpdateSetting() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (data: Record<string, any>) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const res = await fetch('/api/user-settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       if (!res.ok) throw new Error('Failed');
       return res.json();
@@ -86,7 +106,6 @@ function SettingsToggle({ field, label, description }: { field: string; label: s
 }
 
 export function SettingsForm() {
-  const { data: session } = useSession()
   const [activeCategory, setActiveCategory] = useState('account')
   const [mobileShowContent, setMobileShowContent] = useState(false)
 
@@ -164,10 +183,10 @@ function SettingsContent({ category }: { category: string }) {
 function AccountSettings() {
   const { data: session, update } = useSession()
   const [name, setName] = useState(session?.user?.name ?? '')
-  const [bio, setBio] = useState((session?.user as any)?.bio ?? '')
-  const [college, setCollege] = useState((session?.user as any)?.college ?? '')
-  const [course, setCourse] = useState((session?.user as any)?.course ?? '')
-  const [semester, setSemester] = useState((session?.user as any)?.semester ?? '')
+  const [bio, setBio] = useState(session?.user?.bio ?? '')
+  const [college, setCollege] = useState(session?.user?.college ?? '')
+  const [course, setCourse] = useState(session?.user?.course ?? '')
+  const [semester, setSemester] = useState(session?.user?.semester ?? '')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [showCurrentPw, setShowCurrentPw] = useState(false)
@@ -175,13 +194,13 @@ function AccountSettings() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const saveMutation = useMutation({
-    mutationFn: (data: any) => fetch('/api/user-settings/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()),
+    mutationFn: (data: { name?: string; bio?: string; college?: string; course?: string; semester?: string }) => fetch('/api/user-settings/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()),
     onSuccess: () => { toast.success('Profile updated'); update(); },
     onError: () => toast.error('Failed to update profile'),
   })
 
   const passwordMutation = useMutation({
-    mutationFn: (data: any) => fetch('/api/user-settings/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()),
+    mutationFn: (data: { currentPassword: string; newPassword: string }) => fetch('/api/user-settings/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()),
     onSuccess: () => { toast.success('Password changed'); setCurrentPassword(''); setNewPassword(''); },
     onError: () => toast.error('Failed to change password'),
   })
@@ -192,7 +211,7 @@ function AccountSettings() {
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16"><AvatarImage src={session?.user?.image ?? undefined} /><AvatarFallback className="text-lg">{session?.user?.name?.charAt(0)?.toUpperCase() ?? 'U'}</AvatarFallback></Avatar>
-            <div><p className="text-sm font-medium">{session?.user?.name}</p><p className="text-xs text-muted-foreground">@{(session?.user as any)?.username || 'user'}</p></div>
+            <div><p className="text-sm font-medium">{session?.user?.name}</p><p className="text-xs text-muted-foreground">@{session?.user?.username || 'user'}</p></div>
           </div>
           <div className="space-y-1.5"><Label className="text-sm font-medium">Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} className="h-10 rounded-xl bg-muted/30" /></div>
           <div className="space-y-1.5"><Label className="text-sm font-medium">Bio</Label><Textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={300} placeholder="Write a bio..." className="rounded-xl bg-muted/30 min-h-[72px]" /><p className="text-xs text-muted-foreground text-right">{bio.length}/300</p></div>
@@ -279,7 +298,7 @@ function NotificationSettings() {
 
 function AppearanceSettings() {
   const { theme, setTheme } = useTheme()
-  const { data: settings } = useUserSettings()
+  useUserSettings()
   const updateMutation = useUpdateSetting()
 
   return (
@@ -314,18 +333,22 @@ function Monitor({ className }: { className?: string }) {
 
 function SocialLinksSettings() {
   const { data: settings } = useUserSettings()
-  const [twitter, setTwitter] = useState((settings as any)?.twitterUrl ?? '')
-  const [github, setGithub] = useState((settings as any)?.githubUrl ?? '')
-  const [linkedin, setLinkedin] = useState((settings as any)?.linkedinUrl ?? '')
-  const [website, setWebsite] = useState((settings as any)?.websiteUrl ?? '')
+  const [twitter, setTwitter] = useState(settings?.twitterUrl ?? '')
+  const [github, setGithub] = useState(settings?.githubUrl ?? '')
+  const [linkedin, setLinkedin] = useState(settings?.linkedinUrl ?? '')
+  const [website, setWebsite] = useState(settings?.websiteUrl ?? '')
   const updateMutation = useUpdateSetting()
 
   useEffect(() => {
     if (settings) {
-      setTwitter((settings as any)?.twitterUrl ?? '')
-      setGithub((settings as any)?.githubUrl ?? '')
-      setLinkedin((settings as any)?.linkedinUrl ?? '')
-      setWebsite((settings as any)?.websiteUrl ?? '')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTwitter(settings?.twitterUrl ?? '')
+       
+      setGithub(settings?.githubUrl ?? '')
+       
+      setLinkedin(settings?.linkedinUrl ?? '')
+       
+      setWebsite(settings?.websiteUrl ?? '')
     }
   }, [settings])
 

@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import {
-  Users, FileText, Download, Eye, Heart, TrendingUp, BarChart3, Activity,
+  Users, FileText, Download, Eye, Heart, TrendingUp, BarChart3,
 } from 'lucide-react'
 import { cn, formatNumber } from '@/lib/utils'
 
@@ -19,13 +19,13 @@ export default function AdminAnalyticsPage() {
 
   const allPosts = posts?.data ?? []
 
-  const totalLikes = allPosts.reduce((sum: number, p: any) => sum + (p.likesCount || 0), 0)
-  const totalComments = allPosts.reduce((sum: number, p: any) => sum + (p.commentsCount || 0), 0)
-  const totalViews = allPosts.reduce((sum: number, p: any) => sum + (p.viewsCount || 0), 0)
+  const totalLikes = allPosts.reduce((sum: number, p: { likesCount?: number }) => sum + (p.likesCount || 0), 0)
+  const totalComments = allPosts.reduce((sum: number, p: { commentsCount?: number }) => sum + (p.commentsCount || 0), 0)
+  const totalViews = allPosts.reduce((sum: number, p: { viewsCount?: number }) => sum + (p.viewsCount || 0), 0)
 
-  const topPosts = [...allPosts].sort((a: any, b: any) => (b.trendingScore || 0) - (a.trendingScore || 0)).slice(0, 5)
+  const topPosts = [...allPosts].sort((a: { trendingScore?: number }, b: { trendingScore?: number }) => (b.trendingScore || 0) - (a.trendingScore || 0)).slice(0, 5)
 
-  const resourceTypes = allPosts.reduce((acc: Record<string, number>, p: any) => {
+  const resourceTypes = allPosts.reduce((acc: Record<string, number>, p: { resourceType?: string }) => {
     const type = p.resourceType || 'document'
     acc[type] = (acc[type] || 0) + 1
     return acc
@@ -77,7 +77,7 @@ export default function AdminAnalyticsPage() {
               Top Posts
             </h3>
             <div className="space-y-3">
-              {topPosts.map((post: any, i: number) => (
+              {topPosts.map((post: { id: string; title: string; user?: { username: string }; likesCount: number; viewsCount: number }, i: number) => (
                 <div key={post.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                   <span className="text-sm font-bold text-muted-foreground w-5">{i + 1}</span>
                   <div className="min-w-0 flex-1">

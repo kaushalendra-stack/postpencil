@@ -3,15 +3,9 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { or, eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import { auth } from '@/lib/auth/config';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { identifier, password } = await request.json();
 
     if (!identifier || !password) {

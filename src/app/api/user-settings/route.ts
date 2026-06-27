@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { generateId } from '@/lib/utils';
 import { settingsSchema } from '@/lib/validators';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await auth();
     if (!session?.user?.id) {

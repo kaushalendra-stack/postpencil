@@ -19,7 +19,6 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SearchBar } from './search-bar'
 import { useRouter } from 'next/navigation'
-import { formatDate } from '@/lib/utils'
 
 const CATEGORIES = [
   { label: 'CS & IT', icon: Code, color: 'bg-blue-500/10 text-blue-500' },
@@ -73,7 +72,7 @@ export function ExploreContent() {
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {(trendingPosts?.data ?? []).slice(0, 6).map((post: any) => (
+            {(trendingPosts?.data ?? []).slice(0, 6).map((post: { id: string; title: string; description: string | null; user?: { username: string }; likesCount: number }) => (
               <Link key={post.id} href={`/post/${post.id}`}>
                 <Card className="transition-colors hover:bg-muted/50">
                   <CardContent className="p-4">
@@ -109,7 +108,7 @@ export function ExploreContent() {
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {(trendingTags ?? []).map((tag: any) => (
+            {(trendingTags ?? []).map((tag: { id: string; name: string }) => (
               <Link key={tag.id} href={`/search?q=${tag.name}&tab=resources`}>
                 <Badge variant="secondary" className="cursor-pointer hover:bg-primary/10 hover:text-primary">
                   #{tag.name}

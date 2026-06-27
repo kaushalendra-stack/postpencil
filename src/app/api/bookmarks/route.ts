@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
 import { bookmarks, posts, users, files, postTags, tags } from '@/lib/db/schema';
-import { eq, and, desc, sql, count } from 'drizzle-orm';
+import { eq, desc, sql, count } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -71,8 +71,8 @@ export async function GET(request: NextRequest) {
         viewsCount: item.viewsCount,
         createdAt: item.postsCreatedAt,
         user: { id: item.userId, name: item.userName, username: item.userUsername, image: item.userImage },
-        files: postFiles.filter((f: any) => f.postId === item.postId).map((f: any) => ({ id: f.id, fileName: f.fileName, originalName: f.originalName, fileUrl: f.fileUrl, fileSize: f.fileSize, mimeType: f.mimeType, fileType: f.fileType, thumbnailUrl: f.thumbnailUrl })),
-        tags: postTagsData.filter((t: any) => t.postId === item.postId).map((t: any) => ({ id: t.id, name: t.name, slug: t.slug })),
+        files: postFiles.filter((f) => f.postId === item.postId).map((f) => ({ id: f.id, fileName: f.fileName, originalName: f.originalName, fileUrl: f.fileUrl, fileSize: f.fileSize, mimeType: f.mimeType, fileType: f.fileType, thumbnailUrl: f.thumbnailUrl })),
+        tags: postTagsData.filter((t) => t.postId === item.postId).map((t) => ({ id: t.id, name: t.name, slug: t.slug })),
       },
     }));
 

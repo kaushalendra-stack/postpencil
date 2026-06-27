@@ -1,13 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import {
   Upload, Users, Bookmark, TrendingUp, Search, Shield,
   MessageCircle, Heart, Download, GraduationCap, BookOpen,
-  ArrowRight, Check, Sparkles, Zap, FolderOpen, BarChart3,
+  ArrowRight, Check, Sparkles, FolderOpen, BarChart3,
   Globe, Star,
 } from 'lucide-react'
 
@@ -33,29 +34,6 @@ function Reveal({ children, delay = 0, className = '' }: { children: React.React
       opacity: v ? 1 : 0,
       transform: v ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.97)',
       transition: `all 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s`,
-    }}>{children}</div>
-  )
-}
-
-function SlideIn({ children, delay = 0, direction = 'left' as 'left' | 'right', className = '' }: { children: React.ReactNode; delay?: number; direction?: 'left' | 'right'; className?: string }) {
-  const { ref, v } = useInView()
-  const x = direction === 'left' ? -40 : 40
-  return (
-    <div ref={ref} className={className} style={{
-      opacity: v ? 1 : 0,
-      transform: v ? 'translateX(0)' : `translateX(${x}px)`,
-      transition: `all 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s`,
-    }}>{children}</div>
-  )
-}
-
-function ScaleIn({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
-  const { ref, v } = useInView()
-  return (
-    <div ref={ref} className={className} style={{
-      opacity: v ? 1 : 0,
-      transform: v ? 'scale(1)' : 'scale(0.92)',
-      transition: `all 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s`,
     }}>{children}</div>
   )
 }
@@ -89,25 +67,10 @@ function TypeWriter({ text, className = '' }: { text: string; className?: string
   )
 }
 
-function GlowCard({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
-  const { ref, v } = useInView()
-  return (
-    <div ref={ref} className={className} style={{
-      opacity: v ? 1 : 0,
-      transform: v ? 'translateY(0) scale(1)' : 'translateY(24px) scale(0.97)',
-      transition: `all 0.6s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s`,
-    }}>
-      <div className="h-full rounded-2xl border border-border/30 bg-card p-7 sm:p-8 hover:border-border/60 hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-white/5 transition-all duration-300 h-full">
-        {children}
-      </div>
-    </div>
-  )
-}
-
 /* ── Page ── */
 
 export default function RootPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   useEffect(() => { if (status === 'authenticated') router.push('/home') }, [status, router])
   if (status === 'loading') return <div className="flex h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>
@@ -120,7 +83,7 @@ export default function RootPage() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex items-center justify-between h-16 border-b border-border/20">
             <Link href="/" className="flex items-center gap-2.5">
-              <img src="/logo.svg" alt="PostPencil" className="h-10 w-auto dark:brightness-0 dark:invert" />
+              <Image src="/logo.svg" alt="PostPencil" width={40} height={40} className="h-10 w-auto dark:brightness-0 dark:invert" />
             </Link>
             <div className="flex items-center gap-1">
               <Link href="/login" className="rounded-lg px-3.5 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -409,7 +372,7 @@ export default function RootPage() {
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-10">
               <div className="max-w-sm">
                 <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
-                  <img src="/logo.svg" alt="PostPencil" className="h-8 w-auto dark:brightness-0 dark:invert" />
+                  <Image src="/logo.svg" alt="PostPencil" width={32} height={32} className="h-8 w-auto dark:brightness-0 dark:invert" />
                 </Link>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   The social learning platform where students share educational resources, discover study materials, and connect with creators.

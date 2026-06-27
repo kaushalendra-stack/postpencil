@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { posts, tags, postTags } from '@/lib/db/schema'
-import { eq, like, or, and, sql, desc } from 'drizzle-orm'
+import { posts, tags } from '@/lib/db/schema'
+import { eq, like, or, sql, desc } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
   try {

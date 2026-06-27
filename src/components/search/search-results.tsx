@@ -3,11 +3,9 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { FileText, User, Tag, Search } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
@@ -81,10 +79,10 @@ export function SearchResults() {
 function SearchTabContent({
   isLoading,
   data,
-  type,
+  type: _type,
 }: {
   isLoading: boolean
-  data: any
+  data: { results?: Array<{ id: string; type: string; title?: string; description?: string; name?: string; username?: string; image?: string; postCount?: number; createdAt?: string; user?: { username: string } }> } | undefined
   type: string
 }) {
   if (isLoading) {
@@ -109,7 +107,7 @@ function SearchTabContent({
 
   return (
     <div className="space-y-3 pt-4">
-      {items.map((item: any) => {
+      {items.map((item: { id: string; type: string; title?: string; description?: string; name?: string; username?: string; image?: string; postCount?: number; createdAt?: string; user?: { username: string } }) => {
         if (item.type === 'post') {
           return (
             <Link key={item.id} href={`/post/${item.id}`}>

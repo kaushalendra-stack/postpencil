@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Users, FileText, AlertTriangle, BarChart3, Shield, CheckCircle, Download, Eye, Heart,
-  Clock, Search, ArrowUpRight, Sparkles, Zap,
+  Users, FileText, AlertTriangle, BarChart3, CheckCircle, Download, Eye, Heart,
+  ArrowUpRight, Sparkles, Zap,
 } from 'lucide-react'
 import { cn, formatDate, formatNumber } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -90,7 +89,7 @@ function OverviewTab() {
             </Link>
           </div>
           <div className="space-y-3">
-            {(recentPosts?.data ?? []).slice(0, 5).map((post: any) => (
+            {(recentPosts?.data ?? []).slice(0, 5).map((post: { id: string; title: string; user?: { username: string }; createdAt: string; likesCount: number; viewsCount: number }) => (
               <Link
                 key={post.id}
                 href={`/post/${post.id}`}
@@ -127,7 +126,7 @@ function OverviewTab() {
             </span>
           </div>
           <div className="space-y-3">
-            {(reports ?? []).slice(0, 4).map((report: any) => (
+            {(reports ?? []).slice(0, 4).map((report: { id: string; reason: string; reporter?: { username: string } }) => (
               <div key={report.id} className="p-3 rounded-lg bg-muted/50">
                 <p className="text-xs font-medium line-clamp-1">{report.reason}</p>
                 <p className="text-xs text-muted-foreground mt-1">by {report.reporter?.username}</p>
@@ -154,7 +153,7 @@ function OverviewTab() {
             </h3>
           </div>
           <div className="space-y-3">
-            {(recentUsers ?? []).slice(0, 5).map((user: any) => (
+            {(recentUsers ?? []).slice(0, 5).map((user: { id: string; name: string | null; username: string; image: string | null; role: string }) => (
               <Link
                 key={user.id}
                 href={`/user/${user.username}`}

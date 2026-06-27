@@ -16,6 +16,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMobileOpen(false)
   }, [pathname])
 
@@ -29,7 +30,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   if (!session) return null
 
-  const userRole = (session.user as any)?.role
+  const userRole = session.user.role
   if (userRole !== 'admin') return null
 
   return (

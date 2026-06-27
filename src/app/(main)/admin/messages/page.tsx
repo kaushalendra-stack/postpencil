@@ -4,10 +4,9 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
-  Mail, Clock, Tag, MessageSquare, Send, CheckCircle2,
+  Mail, Clock, Tag, MessageSquare, Send,
 } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
 
 interface Ticket {
   id: string

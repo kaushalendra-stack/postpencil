@@ -46,7 +46,7 @@ export default function AdminActivityPage() {
           <div className="relative">
             <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
             <div className="space-y-4">
-              {items.map((notification: any) => {
+              {items.map((notification: { id: string; type: string; message: string; createdAt: string; actor?: { name: string | null; username: string; image: string | null }; post?: { id: string; title: string } }) => {
                 const config = ACTIVITY_TYPES[notification.type] || { icon: Bell, color: 'text-muted-foreground', bg: 'bg-muted/50' }
                 const Icon = config.icon
                 return (

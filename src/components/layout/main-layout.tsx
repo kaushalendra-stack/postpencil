@@ -24,8 +24,8 @@ export function MainLayout({ children, title, showBack = false, hideTopBar = fal
 
   const isPublic = PUBLIC_ROUTES.some((route) => pathname.startsWith(route))
 
-  // Close mobile nav on route change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMobileOpen(false)
   }, [pathname])
 
@@ -45,7 +45,7 @@ export function MainLayout({ children, title, showBack = false, hideTopBar = fal
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
       <div className="flex flex-1 flex-col min-w-0">
         {!hideTopBar && <TopBar title={title} onMenuClick={() => setMobileOpen(true)} showBack={showBack} />}
-        <main className="flex-1 pb-20 lg:pb-0">{children}</main>
+        <main id="main-content" className="flex-1 pb-20 lg:pb-0">{children}</main>
         <Footer />
       </div>
       <MobileNav />
