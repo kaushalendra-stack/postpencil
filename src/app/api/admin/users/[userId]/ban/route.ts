@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
-import { users } from '@/lib/db/schema';
+import { users, auditLogs } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 export async function POST(
   request: NextRequest,
@@ -33,6 +34,15 @@ export async function POST(
       .update(users)
       .set({ isBanned: newBannedState })
       .where(eq(users.id, userId));
+
+    await db.insert(auditLogs).values({
+      id: randomUUID(),
+      adminId: session.user.id,
+      action: newBannedState ? 'ban_user' : 'unban_user',
+      targetType: 'user',
+      targetId: userId,
+      details: `${newBannedState ? 'Banned' : 'Unbanned'} user ${user.username || user.email}`,
+    });
 
     return NextResponse.json({
       banned: newBannedState,

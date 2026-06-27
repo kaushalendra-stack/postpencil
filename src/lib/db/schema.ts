@@ -467,3 +467,20 @@ export const discussionRepliesRelations = relations(discussionReplies, ({ one })
     references: [users.id],
   }),
 }));
+
+export const auditLogs = mysqlTable('audit_logs', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  adminId: varchar('admin_id', { length: 36 }).notNull().references(() => users.id),
+  action: varchar('action', { length: 100 }).notNull(),
+  targetType: varchar('target_type', { length: 50 }).notNull(),
+  targetId: varchar('target_id', { length: 36 }),
+  details: text('details'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  admin: one(users, {
+    fields: [auditLogs.adminId],
+    references: [users.id],
+  }),
+}));

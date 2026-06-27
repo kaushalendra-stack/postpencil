@@ -274,7 +274,7 @@ The codebase has 47 files with `any` types, 9 API routes with missing input vali
 16. **Migrate landing page to server components** — SEO and performance
 17. **~~Add image optimization~~** — ✅ Converted logo `<img>` tags to `next/image` in sidebar, login, register, and landing page (7 instances).
 18. **~~Add CAPTCHA~~** — ✅ Removed — user requested CAPTCHA removal.
-19. **Add admin audit logging** — Track ban/unban actions
+19. **~~Add admin audit logging~~** — ✅ Added `audit_logs` table, instrumented ban/unban and report resolve/dismiss endpoints, created `/api/admin/audit-logs` endpoint, updated admin activity page to display audit trail.
 20. **Migrate to proxy convention** — Replace deprecated middleware
 
 ---

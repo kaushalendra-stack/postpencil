@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
-import { reports } from '@/lib/db/schema';
+import { reports, auditLogs } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 export async function PATCH(
   request: NextRequest,
@@ -36,6 +37,15 @@ export async function PATCH(
         resolvedAt: status === 'resolved' ? new Date() : undefined,
       })
       .where(eq(reports.id, reportId));
+
+    await db.insert(auditLogs).values({
+      id: randomUUID(),
+      adminId: session.user.id,
+      action: `report_${status}`,
+      targetType: 'report',
+      targetId: reportId,
+      details: `Report ${status} (type: ${report.targetType})`,
+    });
 
     return NextResponse.json({ message: 'Report updated' }, { status: 200 });
   } catch (error) {

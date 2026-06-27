@@ -57,7 +57,7 @@ function isPublicPage(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (pathname.startsWith('/_next') || pathname === '/favicon.ico' || pathname === '/logo.svg' || pathname === '/logo.png' || pathname === '/og.png' || pathname === '/apple-touch-icon.png') {
+  if (pathname.startsWith('/_next') || pathname === '/favicon.ico' || pathname === '/logo.svg' || pathname === '/logo.png' || pathname === '/og.png' || pathname === '/apple-touch-icon.png' || pathname === '/robots.txt' || pathname === '/sitemap.xml' || pathname === '/manifest.json') {
     return NextResponse.next()
   }
 
