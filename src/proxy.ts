@@ -108,17 +108,6 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    if (pathname.startsWith('/api/admin')) {
-      const tokenRole = (token as unknown as { role?: string })?.role
-      if (tokenRole !== 'admin') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-      }
-    }
-
     return NextResponse.next()
   }
 
