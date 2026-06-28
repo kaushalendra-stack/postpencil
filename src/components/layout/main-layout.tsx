@@ -22,6 +22,7 @@ export function MainLayout({ children, title, showBack = false, hideTopBar = fal
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [redirectAttempted, setRedirectAttempted] = useState(false)
 
   const isPublic = PUBLIC_ROUTES.some((route) => pathname.startsWith(route))
 
@@ -30,20 +31,20 @@ export function MainLayout({ children, title, showBack = false, hideTopBar = fal
   }, [pathname])
 
   useEffect(() => {
-    if (status === 'unauthenticated' && !isPublic) {
+    if (status === 'unauthenticated' && !isPublic && !redirectAttempted) {
+      setRedirectAttempted(true)
       router.replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`)
     }
-  }, [status, isPublic, pathname, router])
+  }, [status, isPublic, pathname, router, redirectAttempted])
 
-  if (status === 'loading' && !isPublic) {
+  if (isPublic) return <>{children}</>
+  if (status === 'loading') {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     )
   }
-
-  if (isPublic) return <>{children}</>
   if (!session) return null
 
   return (

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
-import { discussions, users, discussionLikes } from '@/lib/db/schema';
-import { eq, and, sql, desc, count } from 'drizzle-orm';
+import { discussions, users, discussionLikes, follows } from '@/lib/db/schema';
+import { eq, and, sql, desc, count, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { discussionSchema } from '@/lib/validators';
 
@@ -43,10 +43,31 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
+    const tab = searchParams.get('tab') || 'for-you';
     const offset = (page - 1) * limit;
 
     const session = await auth();
     const userId = session?.user?.id;
+
+    let baseWhere = and(eq(discussions.isPublished, true), sql`${discussions.deletedAt} IS NULL`);
+
+    if (tab === 'following' && userId) {
+      const followingIds = await db
+        .select({ followingId: follows.followingId })
+        .from(follows)
+        .where(eq(follows.followerId, userId));
+
+      const ids = followingIds.map((f) => f.followingId);
+      if (ids.length > 0) {
+        baseWhere = and(
+          eq(discussions.isPublished, true),
+          sql`${discussions.deletedAt} IS NULL`,
+          inArray(discussions.userId, ids)
+        );
+      } else {
+        return NextResponse.json({ data: [], total: 0, page, limit, hasMore: false });
+      }
+    }
 
     const data = await db
       .select({
@@ -65,7 +86,7 @@ export async function GET(request: NextRequest) {
       })
       .from(discussions)
       .innerJoin(users, eq(discussions.userId, users.id))
-      .where(and(eq(discussions.isPublished, true), sql`${discussions.deletedAt} IS NULL`))
+      .where(baseWhere)
       .orderBy(desc(discussions.createdAt))
       .limit(limit)
       .offset(offset);
@@ -79,7 +100,7 @@ export async function GET(request: NextRequest) {
         .from(discussionLikes)
         .where(and(
           eq(discussionLikes.userId, userId),
-          sql`${discussionLikes.discussionId} IN (${sql.join(discussionIds.map((id) => sql`${id}`), sql`, `)})`
+          inArray(discussionLikes.discussionId, discussionIds)
         ));
       likedIds = userLikes.map((l) => l.discussionId);
     }
@@ -98,7 +119,7 @@ export async function GET(request: NextRequest) {
     }));
 
     const totalResult = await db.select({ count: count() }).from(discussions)
-      .where(and(eq(discussions.isPublished, true), sql`${discussions.deletedAt} IS NULL`));
+      .where(baseWhere);
     const total = totalResult[0]?.count || 0;
 
     return NextResponse.json({ data: result, total, page, limit, hasMore: page * limit < total });

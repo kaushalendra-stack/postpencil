@@ -28,7 +28,7 @@ export async function generateMetadata({
     }
 
     const title = discussion.content?.slice(0, 60) || 'Discussion'
-    const desc = discussion.content?.slice(0, 160) || `Discussion on PostPencil`
+    const desc = discussion.content?.slice(0, 160) || 'Discussion on PostPencil'
 
     return {
       ...siteMetadata(title, desc),
@@ -48,7 +48,7 @@ export default async function DiscussionDetailPage({
 }) {
   const { discussionId } = await params
   return (
-    <MainLayout showBack>
+    <MainLayout hideTopBar>
       <DiscussionDetail discussionId={discussionId} />
     </MainLayout>
   )

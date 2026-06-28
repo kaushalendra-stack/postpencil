@@ -129,13 +129,12 @@ export function ModernPostDetail() {
         <Link href={`/user/${post.user.username}`} className="block rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-5 mb-4 transition-all duration-300 hover:border-border/70 hover:bg-card/80 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20 animate-float-up stagger-1">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <Avatar className="h-14 w-14 ring-2 ring-background">
+              <Avatar className="h-14 w-14">
                 <AvatarImage src={post.user.image || ''} />
                 <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-primary/20 to-primary/5">
                   {post.user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-background" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-base">{post.user.name}</p>
@@ -191,31 +190,38 @@ export function ModernPostDetail() {
           </div>
         )}
 
-        {/* File preview */}
-        {pf && (
-          <div className={cn(
-            'rounded-2xl border bg-gradient-to-r p-[1px] mb-4 animate-float-up stagger-4',
-            fileGradient
-          )}>
-            <div className="flex items-center gap-4 rounded-[15px] bg-background/80 backdrop-blur-sm p-5">
-              <div className={cn('flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br', fileGradient)}>
-                {FILE_ICONS[pf.fileType] || FILE_ICONS.document}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">{pf.originalName}</p>
-                <p className="text-sm text-muted-foreground/50 mt-0.5">
-                  {pf.fileType.toUpperCase()} · {formatFileSize(pf.fileSize)}
-                </p>
-              </div>
-              <Button asChild className="rounded-xl px-5" onClick={() => {
-                fetch(`/api/posts/${post.id}/download`, { method: 'POST' }).catch(() => {})
-              }}>
-                <a href={pf.fileUrl} download>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </a>
-              </Button>
-            </div>
+        {/* File list */}
+        {post.files?.length > 0 && (
+          <div className="mb-4 animate-float-up stagger-4 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wider px-1">
+              {post.files.length} {post.files.length === 1 ? 'file' : 'files'}
+            </p>
+            {post.files.map((file: { id: string; fileUrl: string; originalName: string; fileType: string; fileSize: number }) => {
+              const fg = FILE_GRADIENTS[file.fileType] || 'from-muted/20 to-muted/20 text-muted-foreground border-border/20'
+              return (
+                <Link
+                  key={file.id}
+                  href={`/view/${post.id}?file=${file.id}`} target="_blank"
+                  className={cn(
+                    'flex items-center gap-4 rounded-2xl border bg-gradient-to-r p-[1px] transition-all duration-200 hover:opacity-90 hover:shadow-md hover:shadow-black/5 cursor-pointer',
+                    fg
+                  )}
+                >
+                  <div className="flex-1 flex items-center gap-4 rounded-[15px] bg-background/80 backdrop-blur-sm p-4">
+                    <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br', fg)}>
+                      {FILE_ICONS[file.fileType] || FILE_ICONS.document}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">{file.originalName}</p>
+                      <p className="text-xs text-muted-foreground/50 mt-0.5">
+                        {file.fileType.toUpperCase()} · {formatFileSize(file.fileSize)}
+                      </p>
+                    </div>
+                    <Eye className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         )}
 
@@ -287,6 +293,50 @@ export function ModernPostDetail() {
         <RelatedPosts postId={post.id} />
       </div>
     </div>
+  )
+}
+
+function FileDownloadButton({ postId, fileUrl }: { postId: string; fileUrl: string }) {
+  const [downloading, setDownloading] = useState(false)
+
+  const handleDownload = async () => {
+    setDownloading(true)
+    try {
+      const res = await fetch(`/api/posts/${postId}/download`, { method: 'POST' })
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || 'Download failed')
+        setDownloading(false)
+        return
+      }
+
+      if (data.downloadsRemaining !== undefined) {
+        toast.success(`Downloaded (${data.downloadsUsed}/10 today)`, { duration: 3000 })
+      }
+
+      const a = document.createElement('a')
+      a.href = fileUrl
+      a.download = ''
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    } catch {
+      toast.error('Download failed')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  return (
+    <Button
+      onClick={handleDownload}
+      disabled={downloading}
+      className="rounded-xl px-5"
+    >
+      <Download className="h-4 w-4 mr-2" />
+      {downloading ? 'Downloading...' : 'Download'}
+    </Button>
   )
 }
 

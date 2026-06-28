@@ -15,11 +15,11 @@ interface DiscussionData {
 
 const DISCUSSION_CACHE_TIME = 5 * 60 * 1000
 
-export function useDiscussionFeed() {
+export function useDiscussionFeed(tab: 'for-you' | 'following' = 'for-you') {
   return useInfiniteQuery({
-    queryKey: ['discussions'],
+    queryKey: ['discussions', tab],
     queryFn: ({ pageParam = 1 }) =>
-      fetch(`/api/discussions?page=${pageParam}`).then((res) => res.json()),
+      fetch(`/api/discussions?page=${pageParam}&tab=${tab}`).then((res) => res.json()),
     getNextPageParam: (lastPage: DiscussionPage) => lastPage.hasMore ? lastPage.page + 1 : undefined,
     initialPageParam: 1,
     staleTime: DISCUSSION_CACHE_TIME,

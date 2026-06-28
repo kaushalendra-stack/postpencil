@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { ImagePlus, Send, X } from 'lucide-react'
+import { ImagePlus, X, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -12,7 +12,7 @@ export function DiscussionCompose() {
   const { data: session } = useSession()
   const queryClient = useQueryClient()
   const [content, setContent] = useState('')
-  const [isFocused, setIsFocused] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -33,40 +33,32 @@ export function DiscussionCompose() {
     }
   }
 
-  const removeImage = () => {
+  const reset = () => {
+    setContent('')
     setImageFile(null)
     setImagePreview(null)
+    setExpanded(false)
   }
 
   const handleSubmit = async () => {
     if (!content.trim() || isSubmitting) return
-
     setIsSubmitting(true)
     try {
-      const imageUrl: string | null = null
-
       const res = await fetch('/api/discussions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: content.trim(), imageUrl }),
+        body: JSON.stringify({ content: content.trim(), imageUrl: null }),
       })
-
       if (!res.ok) throw new Error('Failed to create')
       const data = await res.json()
-
       if (imageFile) {
         const formData = new FormData()
         formData.append('file', imageFile)
         formData.append('discussionId', data.id)
         await fetch('/api/upload-discussion-image', { method: 'POST', body: formData }).catch(() => {})
       }
-
-      setContent('')
-      setImageFile(null)
-      setImagePreview(null)
-      setIsFocused(false)
+      reset()
       queryClient.invalidateQueries({ queryKey: ['discussions'] })
-      toast.success('Posted!')
     } catch {
       toast.error('Failed to post')
     } finally {
@@ -76,83 +68,96 @@ export function DiscussionCompose() {
 
   return (
     <div className={cn(
-      'rounded-2xl border transition-all duration-300 overflow-hidden mb-4',
-      isFocused
-        ? 'border-primary/30 bg-card shadow-lg shadow-primary/5'
-        : 'border-border/40 bg-card/50 hover:border-border/60'
+      'relative rounded-2xl border transition-all duration-400',
+      expanded
+        ? 'border-border/50 bg-card shadow-lg shadow-black/[0.03] dark:shadow-black/15'
+        : 'border-border/25 bg-card/80 hover:bg-card hover:border-border/40 hover:shadow-md hover:shadow-black/[0.02]'
     )}>
-      <div className="p-4">
-        <div className="flex gap-3">
-          <Avatar className="h-9 w-9 shrink-0 ring-2 ring-background">
-            <AvatarImage src={session.user.image || undefined} />
-            <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-primary/20 to-primary/5">
-              {session.user.name?.charAt(0)?.toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <textarea
-              placeholder="What's on your mind?"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              rows={isFocused ? 3 : 1}
-              className={cn(
-                'w-full resize-none border-0 bg-transparent text-sm focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/40 transition-all duration-200 px-3 py-2.5',
-                isFocused ? 'min-h-[80px]' : 'min-h-[40px]'
+      {/* Gradient accent when focused */}
+      {expanded && (
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+      )}
+
+      <div className="flex gap-3.5 p-5">
+        <Avatar className="h-11 w-11 shrink-0 ring-2 ring-border/15">
+          <AvatarImage src={session.user.image || undefined} />
+          <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-muted to-muted/60">
+            {session.user.name?.charAt(0)?.toUpperCase() || 'U'}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1 min-w-0">
+          <textarea
+            placeholder="Share something interesting..."
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value)
+              if (!expanded && e.target.value.length > 0) setExpanded(true)
+            }}
+            onFocus={() => setExpanded(true)}
+            className="w-full resize-none border-0 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/35 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-1 leading-relaxed"
+            rows={expanded ? 3 : 1}
+            style={{ minHeight: expanded ? 76 : 28 }}
+          />
+
+          {imagePreview && (
+            <div className="mt-3 relative rounded-xl overflow-hidden border border-border/20 inline-block animate-in fade-in slide-in-from-bottom-1 duration-300">
+              <img src={imagePreview} alt="Preview" className="max-h-48 object-cover" />
+              <button
+                onClick={() => { setImageFile(null); setImagePreview(null) }}
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors backdrop-blur-sm"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+
+          <div className={cn(
+            'flex items-center justify-between overflow-hidden transition-all duration-300 ease-out',
+            expanded ? 'mt-4 pt-4 border-t border-border/15 opacity-100 max-h-24' : 'mt-0 pt-0 border-t-0 opacity-0 max-h-0'
+          )}>
+            <div className="flex items-center gap-0.5 -ml-1.5">
+              <label className="p-2 rounded-full text-muted-foreground/25 hover:text-blue-500 hover:bg-blue-500/5 transition-all duration-200 cursor-pointer">
+                <ImagePlus className="h-4 w-4" />
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {content.length > 0 && (
+                <span className={cn(
+                  'text-[11px] tabular-nums font-mono transition-colors',
+                  content.length > 500 ? 'text-red-500' : content.length > 400 ? 'text-amber-500' : 'text-muted-foreground/25'
+                )}>
+                  {content.length}
+                </span>
               )}
-            />
+              {expanded && content.length === 0 && (
+                <button onClick={reset} className="text-xs text-muted-foreground/35 hover:text-foreground transition-colors">
+                  Cancel
+                </button>
+              )}
+              <button
+                onClick={handleSubmit}
+                disabled={!content.trim() || isSubmitting || content.length > 500}
+                className={cn(
+                  'flex items-center gap-2 px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300',
+                  content.trim() && content.length <= 500
+                    ? 'bg-foreground text-background hover:opacity-90 hover:shadow-md hover:shadow-primary/10 hover:scale-[1.03] active:scale-[0.97]'
+                    : 'bg-muted text-muted-foreground/25 cursor-not-allowed'
+                )}
+              >
+                {isSubmitting ? (
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <>
+                    <Send className="h-3 w-3" />
+                    Post
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
-
-        {imagePreview && (
-          <div className="mt-3 ml-12 relative inline-block">
-            <img src={imagePreview} alt="Preview" className="rounded-xl max-h-48 object-cover border border-border/30" />
-            <button
-              onClick={removeImage}
-              className="absolute top-2 right-2 p-1 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className={cn(
-        'flex items-center justify-between px-4 py-3 border-t border-border/30 bg-muted/20 transition-all duration-300',
-        isFocused ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0 overflow-hidden py-0 border-t-0'
-      )}>
-        <div className="flex items-center gap-1">
-          <label className="p-2 rounded-lg text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-muted/50 transition-colors cursor-pointer">
-            <ImagePlus className="h-4 w-4" />
-            <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-          </label>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground/40 tabular-nums">{content.length}/500</span>
-          <button
-            onClick={() => { setContent(''); setIsFocused(false); removeImage() }}
-            className="px-3 py-1.5 text-xs font-medium text-muted-foreground/60 hover:text-foreground rounded-lg hover:bg-muted/50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!content.trim() || isSubmitting || content.length > 500}
-            className={cn(
-              'flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200',
-              content.trim() && content.length <= 500
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-primary/20'
-                : 'bg-muted text-muted-foreground cursor-not-allowed'
-            )}
-          >
-            {isSubmitting ? (
-              <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            ) : (
-              <Send className="h-3.5 w-3.5" />
-            )}
-            Post
-          </button>
         </div>
       </div>
     </div>

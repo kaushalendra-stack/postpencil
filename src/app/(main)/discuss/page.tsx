@@ -15,7 +15,14 @@ export const metadata: Metadata = {
       'Join discussions, ask questions, and share ideas with the PostPencil community.',
     url: 'https://postpencil.com/discuss',
     siteName: 'PostPencil',
-    images: [{ url: 'https://postpencil.com/og.png', width: 1200, height: 630, alt: 'PostPencil' }],
+    images: [
+      {
+        url: 'https://postpencil.com/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'PostPencil',
+      },
+    ],
     locale: 'en_US',
     type: 'website',
   },
@@ -29,7 +36,7 @@ export const metadata: Metadata = {
 
 export default function DiscussPage() {
   return (
-    <MainLayout title='Discuss'>
+    <MainLayout hideTopBar>
       <DiscussionFeed />
     </MainLayout>
   )

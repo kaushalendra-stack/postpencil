@@ -32,10 +32,9 @@ export function FloatingThemeToggle() {
   const [open, setOpen] = useState(false)
   const [ready, setReady] = useState(false)
   const [pos, setPos] = useState({ x: 0, y: 0 })
-  const [animating, setAnimating] = useState(false)
   const dragging = useRef(false)
   const didMove = useRef(false)
-  const startRef = useRef({ mx: 0, my: 0, sx: 0, sy: 0 })
+  const posRef = useRef({ x: 0, y: 0 })
   const initDone = useRef(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const winRef = useRef({ w: 0, h: 0 })
@@ -49,14 +48,18 @@ export function FloatingThemeToggle() {
     let c: Corner = 'br'
     try { c = (localStorage.getItem(STORAGE_KEY) as Corner) || 'br' } catch {}
     setCorner(c)
-    setPos(getCornerPos(c, w, h))
+    const p = getCornerPos(c, w, h)
+    setPos(p)
+    posRef.current = p
     requestAnimationFrame(() => setReady(true))
 
     const onResize = () => {
       const nw = window.innerWidth
       const nh = window.innerHeight
       winRef.current = { w: nw, h: nh }
-      setPos(getCornerPos(c, nw, nh))
+      const newP = getCornerPos(c, nw, nh)
+      setPos(newP)
+      posRef.current = newP
     }
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
@@ -78,35 +81,34 @@ export function FloatingThemeToggle() {
   const snapTo = useCallback((c: Corner) => {
     const { w, h } = winRef.current
     setCorner(c)
-    setAnimating(true)
     setPos(getCornerPos(c, w, h))
-    setTimeout(() => setAnimating(false), 300)
   }, [])
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return
     e.preventDefault()
     didMove.current = false
-    startRef.current = { mx: e.clientX, my: e.clientY, sx: pos.x, sy: pos.y }
+    const startPos = posRef.current
+    const startClient = { mx: e.clientX, my: e.clientY }
     dragging.current = true
 
     const onMove = (ev: PointerEvent) => {
-      const dx = ev.clientX - startRef.current.mx
-      const dy = ev.clientY - startRef.current.my
+      const dx = ev.clientX - startClient.mx
+      const dy = ev.clientY - startClient.my
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didMove.current = true
       if (!didMove.current) return
       setOpen(false)
-      setAnimating(false)
-      setPos({
-        x: Math.max(8, Math.min(winRef.current.w - 48, startRef.current.sx + dx)),
-        y: Math.max(8, Math.min(winRef.current.h - 48, startRef.current.sy + dy)),
-      })
+      const newX = Math.max(8, Math.min(winRef.current.w - 48, startPos.x + dx))
+      const newY = Math.max(8, Math.min(winRef.current.h - 48, startPos.y + dy))
+      posRef.current = { x: newX, y: newY }
+      setPos({ x: newX, y: newY })
     }
 
     const onUp = () => {
       dragging.current = false
       if (didMove.current) {
-        snapTo(nearestCorner(pos.x, pos.y, winRef.current.w, winRef.current.h))
+        const finalPos = posRef.current
+        snapTo(nearestCorner(finalPos.x, finalPos.y, winRef.current.w, winRef.current.h))
       }
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
@@ -139,7 +141,11 @@ export function FloatingThemeToggle() {
     >
       {open && (
         <div
-          className="absolute bottom-full mb-2 right-0 flex flex-col rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-xl shadow-black/5 overflow-hidden min-w-[120px]"
+          className={`absolute flex flex-col rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-xl shadow-black/5 overflow-hidden min-w-[120px] ${
+            corner.includes('t')
+              ? `top-full mt-2 ${corner.includes('r') ? 'right-0' : 'left-0'}`
+              : `bottom-full mb-2 ${corner.includes('r') ? 'right-0' : 'left-0'}`
+          }`}
           style={{ animation: 'nextdev-in 0.15s cubic-bezier(0.22,1,0.36,1)' }}
         >
           {([

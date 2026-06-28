@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/providers";
+import { DevToolsBlocker } from "@/components/ui/devtools-blocker";
 
 import "./globals.css";
 
@@ -101,6 +102,7 @@ export default function RootLayout({
         >
           Skip to content
         </a>
+        <DevToolsBlocker />
         <Providers>{children}</Providers>
       </body>
     </html>

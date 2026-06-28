@@ -63,15 +63,12 @@ export function ModernPostCard({ post, index = 0 }: { post: PostWithUser; index?
     >
       <div className="flex gap-4">
         <Link href={`/user/${post.user.username}`} onClick={(e) => e.stopPropagation()} className="shrink-0">
-          <div className="relative">
-            <Avatar className="h-11 w-11 ring-2 ring-background transition-transform duration-300 group-hover:scale-105">
-              <AvatarImage src={post.user.image || ''} />
-              <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-primary/20 to-primary/5">
-                {post.user.name?.charAt(0)?.toUpperCase() || '?'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-background" />
-          </div>
+          <Avatar className="h-11 w-11 transition-transform duration-300 group-hover:scale-105">
+            <AvatarImage src={post.user.image || ''} />
+            <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-primary/20 to-primary/5">
+              {post.user.name?.charAt(0)?.toUpperCase() || '?'}
+            </AvatarFallback>
+          </Avatar>
         </Link>
 
         <div className="flex-1 min-w-0">

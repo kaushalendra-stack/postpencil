@@ -1,9 +1,12 @@
 import type { NextConfig } from "next";
 
+const inspectAllowed = process.env.INSPECT_ALLOWED === "true";
+
 const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  productionBrowserSourceMaps: inspectAllowed,
   images: {
     remotePatterns: [
       {
